@@ -41,7 +41,7 @@ pub struct Manifest<'m> {
 }
 
 impl<'m> Manifest<'m> {
-    pub fn new<S: AsRef<str>>(string: S) -> Result<Self, ParseError> {
+    pub fn parse<S: AsRef<str>>(string: S) -> Result<Self, ParseError> {
         ron::de::from_str(string.as_ref())
     }
 }
@@ -50,7 +50,7 @@ impl<'m> FromStr for Manifest<'m> {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::new(s)
+        Self::parse(s)
     }
 }
 
