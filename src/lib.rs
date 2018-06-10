@@ -45,7 +45,7 @@ pub enum InstallError {
     }
 }
 
-pub fn install<'p, P>(_pkgs: P) -> Result<Installed<'p>, ()>
+pub fn install<'p, P>(_pkgs: P) -> Result<Installed<'p>, InstallError>
 where
     P: FromIterator<PackageIdSpec<'p>>
 {
