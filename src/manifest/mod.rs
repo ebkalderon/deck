@@ -1,8 +1,3 @@
-mod build_system;
-mod deps;
-mod features;
-mod source;
-
 pub use ron::de::Error as ParseError;
 
 use std::borrow::Cow;
@@ -16,6 +11,11 @@ use self::deps::Dependencies;
 use self::features::Features;
 use self::source::Source;
 use license::License;
+
+mod build_system;
+mod deps;
+mod features;
+mod source;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "Package")]
