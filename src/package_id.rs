@@ -16,7 +16,7 @@ pub struct PackageId<'p> {
 }
 
 impl<'p> PackageId<'p> {
-    pub fn parse<S: AsRef<str>>(spec: S) -> Result<Self, ParseError> {
+    pub fn new<S: AsRef<str>>(spec: S) -> Result<Self, ParseError> {
         unimplemented!()
     }
 }
@@ -25,7 +25,7 @@ impl<'p> FromStr for PackageId<'p> {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Self::parse(s)
+        Self::new(s)
     }
 }
 

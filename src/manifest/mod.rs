@@ -40,11 +40,17 @@ pub struct Manifest<'m> {
     build_system: BuildSystem<'m>,
 }
 
+impl<'m> Manifest<'m> {
+    pub fn new<S: AsRef<str>>(string: S) -> Result<Self, ParseError> {
+        ron::de::from_str(string.as_ref())
+    }
+}
+
 impl<'m> FromStr for Manifest<'m> {
     type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        ron::de::from_str(s)
+        Self::new(s)
     }
 }
 
@@ -94,6 +100,6 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let _manifest: Manifest = ron::de::from_str(RON_MANIFEST).unwrap();
+        let _manifest: Manifest = RON_MANIFEST.parse().unwrap();
     }
 }
