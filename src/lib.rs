@@ -38,7 +38,7 @@ impl<'p> Iterator for Installed<'p> {
 pub enum InstallError {
     #[fail(display = "package ID error")]
     PackageId,
-    #[fail(display = "package ID error")]
+    #[fail(display = "build of package {} failed: {}", package_id, msg)]
     BuildFailed {
         package_id: String,
         msg: String,
