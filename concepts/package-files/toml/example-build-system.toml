@@ -1,0 +1,72 @@
+[build-system]
+name = "gnu"
+description = "Standard GNU build system"
+sequence = ["unpack", "configure", "build", "check", "install", "strip"]
+
+[settings]
+make-flags = []
+configure-flags = []
+parallel-build = false
+test-target = ""
+parallel-tests = false
+strip-outputs = true
+
+# For simple definitions, you can do:
+#
+# [phases]
+# unpack = "script here"
+# configure = "script here"
+# build = "script here"
+# check = "script here"
+# install = "script here"
+# strip = "script here"
+
+[phases.unpack]
+description = "Unpacking the given source"
+exec = '''tar zxvf ${source} -C source; cd source'''
+
+[phases.configure]
+description = "Applying preconfiguration"
+exec = '''./configure --prefix="${out}" ${configure-flags[@]}'''
+
+[phases.build]
+description = "Building output"
+exec = '''
+    local parallel
+    if [ "${parallel-build}" = true ]; then
+        parallel='-j'
+    fi
+
+    make "${parallel}" ${make-flags[@]}
+'''
+
+[phases.check]
+description = "Checking output validity"
+exec = '''
+    local target
+    if [ -z "${test-target}" ]; then
+        target='check'
+    else
+        target="${test-target}"
+    fi
+
+    local parallel
+    if [ "${parallel-tests}" = true ]; then
+        parallel='-j'
+    fi
+
+    make "${target}" "${parallel}" ${make-flags[@]}
+'''
+
+[phases.install]
+description = "Install package"
+exec = '''make install ${make-flags[@]}'''
+
+[phases.strip]
+description = "Strip output for package"
+exec = '''
+    if [ "${strip-outputs}" = true ]; then
+        # FIXME
+        strip -s "${out}/*"
+    fi
+'''

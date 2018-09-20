@@ -1,0 +1,44 @@
+[package]
+name = "hello"
+version = "2.10"
+description = "A program that produces a familiar, friendly greeting"
+homepage = "http://www.gnu.org/software/hello/manual/"
+
+[features]
+default = []
+enable-gui = ["libx11"]
+
+[dependencies]
+libx11 = { version = "1.2.3", optional = true, reason = "GUI support" }
+
+[source]
+uri = "mirror://gnu/hello/hello.tar.gz"
+sha256 = "0ssi1wpaf7plaswqqjwigppsg5fyh99vdlb9kzl7c9lng89ndq1i"
+
+[derivation.gnu]
+configure-flags = []
+
+[derivation.gnu.'cfg(feature = "enable-gui")']
+configure-flags = ["--with-libx11"]
+
+# Using `derivation` without a build system allows you to create your own:
+
+# [derivation.'cfg(feature = "libx11")'.args]
+# configure-flags = ["--with-libx11"]
+
+# [derivation]
+# script = '''
+#     tar zxvf ./hello.tar.gz
+#     ./configure --prefix="${out}" ${configure-flags[@]}
+#     make
+#     make install
+# '''
+
+# To output a Docker slug of a package or set of packages, do:
+
+# deck pack -f docker -S /opt/deck=/ hello
+
+# By default, this will set the platform triple to `x86_64-linux-unknown-musl`.
+# If you want to set the triple explicitly, do:
+
+# deck pack -f docker -S /opt/deck=/ hello --target x86_64-linux-unknown-gnu

@@ -1,0 +1,40 @@
+# Generated as:
+# ${DECK}/x86_64-linux/gcc-0.1.0/foo-0.1.0-1234567890abcdef/derivation.toml
+
+[[input]]
+name = "zlib"
+version = "0.1.0"
+sha256 = "1234567890abcdef"
+
+[[input]]
+name = "openssl"
+version = "0.1.0"
+sha256 = "1234567890abcdef"
+
+[[build-input]]
+name = "gcc"
+version = "0.1.0"
+sha256 = "1234567890abcdef"
+
+[[dev-input]]
+name = "gtest"
+version = "0.1.0"
+sha256 = "1234567890abcdef"
+
+[[output]]
+name = "thingy"
+version = "0.1.0"
+sha256 = "1234567890abcdef"
+compose-into = "out"
+
+[env]
+MY_SPECIAL_VAR = "foo"
+OMG_WTF = "bar"
+
+[derivation]
+sources = ["1234567890abcdef-thing1.rs", "1234567890abcdef-thing2.sh"]
+platform = "x86_64-linux"
+compiler = "gcc:0.1.0@sha256:1234567890abcdef"
+builder = "bash"
+features = ["thing"]
+args = ["-c", "1234567890abcdef-thing2.sh"]

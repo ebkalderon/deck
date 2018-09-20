@@ -1,0 +1,5 @@
+[workspace]
+hello = "2.10"
+
+[workspace.'cfg(target_os = "linux")']
+rust = "1.28"
