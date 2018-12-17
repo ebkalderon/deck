@@ -1,0 +1,17 @@
+[package]
+name = "deck-client"
+version = "0.1.0"
+authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+
+[features]
+default = ["deck-store/local"]
+multi-user-mode = ["deck-protocol/daemon"]
+
+[dependencies.deck-protocol]
+path = "../deck-protocol"
+default-features = false
+
+[dependencies.deck-store]
+path = "../deck-store"
+features = ["s3", "ssh"]
+default-features = false

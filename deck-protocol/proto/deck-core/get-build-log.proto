@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package deck.core;
+
+option java_package = "org.deck.core";
+option java_outer_classname = "DeckCore";
+
+// Example
+message BuildLogRequest {
+    string package_id = 1;
+}
+
+// Example
+message BuildLogResponse {
+    message Success {
+        bytes build_log = 1;
+    }
+    message Error {
+        enum Status {
+            STATUS_NOT_FOUND = 0;
+            STATUS_INVALID_PACKAGE_ID = 1;
+        }
+        Status status = 1;
+    }
+
+    oneof result {
+        Success success = 1;
+        Error error = 2;
+    }
+}

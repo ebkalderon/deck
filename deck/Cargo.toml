@@ -1,0 +1,38 @@
+[package]
+name = "deck"
+version = "0.1.0"
+authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+description = "Declarative system package manager"
+license = "MIT OR Apache-2.0"
+
+[features]
+default = ["multi-user-mode", "deck-client/multi-user-mode"]
+multi-user-mode = ["deck-daemon"]
+
+[dependencies]
+clap = "2.32"
+structopt = "0.2"
+
+[dependencies.deck-client]
+path = "../deck-client"
+default-features = false
+
+[dependencies.deck-daemon]
+path = "../deck-daemon"
+optional = true
+
+[[bin]]
+name = "deck"
+path = "src/main.rs"
+
+[[bin]]
+name = "deck-build"
+path = "src/bin/build.rs"
+
+[[bin]]
+name = "deck-daemon"
+path = "src/bin/daemon.rs"
+required-features = ["multi-user-mode"]
+
+[dev-dependencies]
+serde_json = "1.0"

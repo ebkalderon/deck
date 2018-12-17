@@ -1,0 +1,24 @@
+// This is a mock version of Deck. When `deck install foo` is run, it will:
+//
+// 1. Check each channel in descending order of priority for the attribute
+//    `foo`.
+// 2. In this case, we specified only `foo` and not `foo-1.0.2`, for example.
+//    Because of this, Deck will select the newest available version for
+//    installation. Based on this, it will fetch the source specified
+//    declaratively in `foo.source`.
+// 3. Converts the `foo` from a `Package` with the given version to a
+//    `Derivation`. Let's call this new binding `drv`.
+// 4. Unless specified otherwise, it will perform whatever extraction or
+//    environment preparation is necessary before the builder is run.
+// 5. Evaluates `drv.builder "path/to/output/dir/`, eventually turning it into a
+//    sequence of executable commands for a Deck worker process to perform.
+// 6. Initializes a new worker process with a reproducible environment and
+//    passes the instructions to the worker for it to execute.
+// 7. Deck daemon waits for a response from the worker.
+// 8. Once complete, the contents of the output directory have any
+//    self-references and path prefixes zeroed out and the file contents hashed.
+// 9. The output directory is renamed to its content-addressible name
+//    `<name>-<version>-<hash>`.
+
+let { foo } = import! "example-package.glu"
+foo.builder "path/to/output/dir/"

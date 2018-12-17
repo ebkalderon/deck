@@ -1,0 +1,7 @@
+// This is a mock `channels` module. This module won't actually exist as a
+// `.glu` file in actual Deck; it will be a declarative `.toml` file with a list
+// of defined channels. Each channel expression defined in that manifest will be
+// fetched and loaded into the interpreter under the `channels` module.
+
+let stable = import! "stable.glu"
+{ stable }

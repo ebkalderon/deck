@@ -1,0 +1,29 @@
+digraph build_graph {
+    subgraph cluster_quux {
+        download_quux -> build_quux;
+        label="quux";
+        graph[style=dotted];
+    }
+    
+    subgraph cluster_foo {
+        download_foo -> build_foo;
+        label="foo";
+        graph[style=dotted];
+    }
+    
+    subgraph cluster_bar {
+        download_bar -> build_bar;
+        label="bar";
+        graph[style=dotted];
+    }
+    
+    subgraph cluster_baz {
+        download_baz -> build_baz;
+        label="baz";
+        graph[style=dotted];
+    }
+    
+    build_quux -> build_foo;
+    build_foo -> build_baz;
+    build_bar -> build_baz;
+}

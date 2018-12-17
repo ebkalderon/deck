@@ -1,0 +1,34 @@
+let { Result } = import! std.result
+
+type Hash =
+    | Sha1 String
+    | Sha256 String
+    | Sha512 String
+    | Blake128 String
+    | Blake256 String
+
+type Source =
+    | Git { git : String, hash : Hash }
+    | Url { url : String, hash : Hash }
+
+type Package = {
+    versions : Array (String, Source),
+    inputs : Array Package,
+    build_inputs : Array Package,
+    builder : String -> IO ()
+}
+
+let builder =
+    let monad @ { monad } = import! std.io
+
+    let copy src dest : String -> String -> IO () =
+        let io @ { ? } = import! std.io
+        io.println ("copy " ++ src ++ " to " ++ dest)
+
+    let move src dest : String -> String -> IO () =
+        let io @ { ? } = import! std.io
+        io.println ("move " ++ src ++ " to " ++ dest)
+
+    { copy, move, monad }
+
+{ Hash, Source, Package, builder }

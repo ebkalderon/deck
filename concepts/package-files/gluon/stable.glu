@@ -1,0 +1,25 @@
+// This is a mock `stable` package channel. This is downloaded from some remote
+// URL and identified by some unique hash.
+
+// Normally hidden and pre-imported at the beginning of expressions.
+let { Hash, Package, Source, builder } = import! "prelude.glu"
+let { copy, move, ? } = builder
+
+// stable.glu
+
+let stdenv : Package = {
+    versions = [("1.0.0", Git {
+                git = "thing",
+                hash = Sha256 "thing",
+            })],
+
+    inputs = [],
+
+    build_inputs = [],
+
+    builder = \out ->
+        do _ = copy "thing" (out ++ "thing")
+        move "thing" out,
+}
+
+{ stdenv }

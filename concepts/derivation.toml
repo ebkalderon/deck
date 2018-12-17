@@ -11,11 +11,18 @@ name = "openssl"
 version = "0.1.0"
 sha256 = "1234567890abcdef"
 
+# This input isn't required to be downloaded if it is provided by a substitute
+# or binary cache. It is only to be fetched and built when building locally.
 [[build-input]]
 name = "gcc"
 version = "0.1.0"
 sha256 = "1234567890abcdef"
 
+# This input is required only when tests are enabled. It doesn't get retained in
+# the final derivation, so it doesn't affect the output hash and is safe to
+# record here. During build time, the test environment gets thrown away after
+# the test is complete. Artifacts from the test environment never get saved nor
+# cached in the final result. TODO: Not sure if we need this.
 [[dev-input]]
 name = "gtest"
 version = "0.1.0"
@@ -32,9 +39,9 @@ MY_SPECIAL_VAR = "foo"
 OMG_WTF = "bar"
 
 [derivation]
-sources = ["1234567890abcdef-thing1.rs", "1234567890abcdef-thing2.sh"]
-platform = "x86_64-linux"
-compiler = "gcc:0.1.0@sha256:1234567890abcdef"
+sources = ["1234567890abcdef-thing1.tar.gz", "1234567890abcdef-builder.sh"]
+host-platform = "x86_64-linux"
+target-platform = "x86_64-linux"
 builder = "bash"
 features = ["thing"]
-args = ["-c", "1234567890abcdef-thing2.sh"]
+args = ["-c", "1234567890abcdef-builder.sh"]

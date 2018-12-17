@@ -1,0 +1,5 @@
+[package]
+id = "hello"
+dependencies = []
+build-dependencies = []
+dev-dependencies = []

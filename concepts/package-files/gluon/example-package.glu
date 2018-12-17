@@ -1,0 +1,25 @@
+// Normally hidden and pre-imported at the beginning of expressions.
+let { Hash, Package, Source, builder } = import! "prelude.glu"
+let { copy, move, ? } = builder
+let channels = import! "channels.glu"
+
+// foo.glu
+
+let { stdenv } = channels.stable
+
+let foo : Package = {
+    versions = [("1.0.0", Git {
+                git = "thing",
+                hash = Sha256 "01234567890abcdef",
+            })],
+
+    inputs = [],
+
+    build_inputs = [stdenv],
+
+    builder = \out ->
+        do _ = copy "hello" (out ++ "there")
+        move "hello" (out ++ "there"),
+}
+
+{ foo }

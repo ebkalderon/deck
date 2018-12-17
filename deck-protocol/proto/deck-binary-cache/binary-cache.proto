@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package deck.binary_cache;
+
+option java_package = "org.deck.binary_cache";
+option java_outer_classname = "DeckBinaryCache";
+
+import "deck-core/core.proto";
+
+// Example
+service BinaryCache {
+    // Example
+    rpc QueryPackages(deck.core.QueryRequest) returns (deck.core.QueryResponse);
+    // Example
+    rpc FetchPackage(FetchRequest) returns (FetchResponse);
+}
+
+// Example
+message FetchRequest {
+    string package_id = 1;
+}
+
+// Example
+message FetchResponse {
+    message Pending {
+        bytes chunk = 1;
+        uint64 total_size = 2;
+    }
+    message Complete {
+        bytes chunk = 1;
+        uint64 total_size = 2;
+    }
+    message Error {
+        enum Status {
+            STATUS_NOT_FOUND = 0;
+            STATUS_IO_ERROR = 1;
+        }
+        Status status = 1;
+    }
+    
+    oneof result {
+        Pending pending = 1;
+        Complete complete = 2;
+        Error error = 3;
+    }
+}

@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package deck.core;
+
+option java_package = "org.deck.core";
+option java_outer_classname = "DeckCore";
+
+import "google/protobuf/timestamp.proto";
+
+// Example
+message Manifest {
+    // Example
+    message Dependency {
+        string package_id = 1;
+        repeated string features = 2;
+    }
+    // Example
+    message Feature {
+        repeated string values = 1;
+    }
+    // Example
+    message Metadata {
+        string name = 1;
+        string version = 2;
+        repeated string authors = 3;
+        repeated string maintainers = 4;
+        string description = 5;
+        string documentation = 6;
+        string homepage = 7;
+        string repository = 8;
+        string license = 9;
+    }
+
+    Metadata metadata = 1;
+    map<string, Feature> features = 2;
+    repeated Dependency dependencies = 3;
+    repeated Dependency build_dependencies = 4;
+    repeated Dependency dev_dependencies = 5;
+    string platform = 6;
+}
+
+// Example
+message BuildResult {
+    message Started {
+        repeated string packages = 1;
+        google.protobuf.Timestamp start_time = 2;
+    }
+    message Pending {
+        enum Status {
+            STATUS_PREPARING = 0;
+            STATUS_DOWNLOADING = 1;
+            STATUS_CONFIGURING = 2;
+            STATUS_COMPILING = 3;
+            STATUS_TESTING = 4;
+            STATUS_FINALIZING = 5;
+        }
+        string package_id = 1;
+        Status status = 2;
+        string description = 3;
+        uint32 current_task = 4;
+        uint32 total_tasks = 5;
+    }
+    message Complete {
+        enum Status {
+            STATUS_BUILT = 0;
+            STATUS_MEMOIZED = 1;
+            STATUS_DOWNLOADED = 2;
+        }
+        string package_id = 1;
+        Status status = 2;
+        google.protobuf.Timestamp stop_time = 3;
+    }
+    message Error {
+        enum Status {
+            STATUS_BUILD_FAILED = 0;
+            STATUS_DEPENDENCY_FAILED = 1;
+            STATUS_TIMED_OUT = 2;
+            STATUS_WORKER_DISCONNECTED = 3;
+            STATUS_NOT_DETERMINISTIC = 4;
+        }
+        string package_id = 1;
+        Status status = 2;
+        google.protobuf.Timestamp stop_time = 3;
+    }
+
+    bytes stdout = 1;
+    bytes stderr = 2;
+    oneof result {
+        Started started = 3;
+        Pending pending = 4;
+        Complete complete = 5;
+        Error err = 6;
+    }
+}
