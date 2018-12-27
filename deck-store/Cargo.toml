@@ -10,7 +10,9 @@ s3 = ["rusoto_s3"]
 ssh = []
 
 [dependencies]
+blake2 = "0.8.0"
 chrono = "0.4.6"
+data-encoding = "2.1.1"
 filetime = "0.2.4"
 fs2 = "0.4.3"
 futures = "0.1.25"
@@ -18,8 +20,11 @@ futures-locks = "0.3.0"
 hyper = "0.12.16"
 hyper-tls = "0.3.1"
 ignore = "0.4.4"
+rand = "0.6.1"
 rusoto_s3 = { version = "0.35.0", optional = true }
 serde = { version = "1.0.80", features = ["derive"] }
+sha2 = "0.8.0"
+sha3 = "0.8.1"
 tokio = "0.1.13"
 toml = "0.4.10"
 url = "1.7.2"

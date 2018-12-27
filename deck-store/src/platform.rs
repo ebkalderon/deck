@@ -205,7 +205,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_common_triples() {
+    fn is_send_and_sync() {
+        fn verify<T: Send + Sync>() {}
+        verify::<Platform>();
+    }
+
+    #[test]
+    fn parse_common_triples() {
         let actual = "x86_64-unknown-linux".parse();
         let expected = Ok(Platform {
             target_arch: Arch::X86_64,
@@ -229,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_invalid_triples() {
+    fn reject_invalid_triples() {
         let result = "i686- unknown-freebsd".parse::<Platform>();
         assert!(result.is_err());
 
@@ -241,7 +247,7 @@ mod tests {
     }
 
     #[test]
-    fn tolerates_leading_trailing_spaces() {
+    fn tolerate_leading_trailing_spaces() {
         let expected = Ok(Platform {
             target_arch: Arch::X86_64,
             target_os: Os::Linux,
@@ -255,5 +261,19 @@ mod tests {
 
         let actual = "   x86_64-unknown-linux   ".parse();
         assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn parse_roundtrip() {
+        let original: Platform = "x86_64-unknown-linux"
+            .parse()
+            .expect("Failed to parse triple!");
+        let text_form = original.to_string();
+
+        let parsed: Platform = text_form
+            .parse()
+            .expect("Failed to parse triple from text!");
+
+        assert_eq!(original, parsed);
     }
 }

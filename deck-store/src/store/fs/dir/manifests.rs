@@ -67,7 +67,6 @@ impl Directory for ManifestsDir {
             .map_err(|_| ());
 
         let writing = creating.map_err(|_| ()).map(|mut file| {
-            println!("writing");
             let manifest = match input {
                 ManifestInput::Constructed(manifest) => {
                     let toml = manifest.to_string();

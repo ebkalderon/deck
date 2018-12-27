@@ -1,4 +1,3 @@
-pub use self::manifest::{Manifest, Source};
+pub use self::manifest::{Manifest, ManifestBuilder, Source};
 
-mod id;
 mod manifest;

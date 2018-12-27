@@ -30,8 +30,8 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    pub fn build(id: String) -> Builder {
-        Builder::new(id)
+    pub fn build(id: String) -> ManifestBuilder {
+        ManifestBuilder::new(id)
     }
 
     pub fn id(&self) -> &String {
@@ -61,7 +61,8 @@ impl Display for Manifest {
             .map_err(|e| {
                 println!("couldn't display self: {}", e);
                 FmtError::default()
-            }).and_then(|s| write!(fmt, "{}", s))
+            })
+            .and_then(|s| write!(fmt, "{}", s))
     }
 }
 
@@ -74,15 +75,15 @@ impl FromStr for Manifest {
 }
 
 #[derive(Clone, Debug)]
-pub struct Builder {
+pub struct ManifestBuilder {
     package: Package,
     sources: Option<Vec<Source>>,
     env: Option<BTreeMap<String, String>>,
 }
 
-impl Builder {
+impl ManifestBuilder {
     pub fn new(id: String) -> Self {
-        Builder {
+        ManifestBuilder {
             package: Package {
                 id,
                 dependencies: BTreeSet::new(),

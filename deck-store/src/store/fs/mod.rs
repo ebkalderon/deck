@@ -12,6 +12,7 @@ use package::{Manifest, Source};
 
 mod closure;
 mod dir;
+mod fetcher;
 mod file;
 mod state;
 
@@ -110,7 +111,8 @@ mod tests {
                 //     as Box<dyn Future<Item = _, Error = _> + Send>,
                 // Box::new(read2.map_err(|_| ()).map(|_| ()))
                 //     as Box<dyn Future<Item = _, Error = _> + Send>,
-            ])).unwrap();
+            ]))
+            .unwrap();
 
         println!("finished: {:?}", ret);
         runtime.shutdown_on_idle().wait().unwrap();
