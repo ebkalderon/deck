@@ -12,15 +12,15 @@ impl Directory for OutputsDir {
 
     const NAME: &'static str = "outputs";
 
-    fn compute_id(&self, input: &Self::Input) -> IdFuture<Self::Id> {
+    fn compute_id(&self, _input: &Self::Input) -> IdFuture<Self::Id> {
         unimplemented!()
     }
 
-    fn read(&self, target: &Path, id: &Self::Id) -> ReadFuture<Self::Output> {
+    fn read(&self, _target: &Path, _id: &Self::Id) -> ReadFuture<Self::Output> {
         unimplemented!()
     }
 
-    fn write(&self, target: &Path, input: Self::Input) -> WriteFuture<Self::Id, Self::Output> {
+    fn write(&self, _target: &Path, _input: Self::Input) -> WriteFuture<Self::Id, Self::Output> {
         unimplemented!()
     }
 }

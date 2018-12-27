@@ -44,9 +44,9 @@ impl Stream for FetchSource {
     }
 }
 
-fn fetch_uri(ctx: Context, id: String, uri: Uri, hash: String) -> FetchSource {
+fn fetch_uri(ctx: Context, id: String, uri: Uri, _hash: String) -> FetchSource {
     let client = ctx.client.clone();
-    let store = ctx.store.clone();
+    let _store = ctx.store.clone();
 
     let downloading = client
         .get(uri.clone())
@@ -81,6 +81,6 @@ fn fetch_uri(ctx: Context, id: String, uri: Uri, hash: String) -> FetchSource {
     FetchSource::from_stream(completing.flatten_stream())
 }
 
-fn fetch_git(ctx: Context, id: String) -> FetchSource {
+fn fetch_git(_ctx: Context, id: String) -> FetchSource {
     FetchSource::from_stream(stream::iter_ok(vec![Progress::Blocked { package_id: id }]))
 }

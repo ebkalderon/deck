@@ -38,7 +38,7 @@ impl StoreDir {
         })
     }
 
-    pub fn compute_closure(&self, package_id: String) -> ReadFuture<Closure> {
+    pub fn compute_closure(&self, _package_id: String) -> ReadFuture<Closure> {
         unimplemented!()
     }
 
@@ -81,9 +81,9 @@ mod tests {
 
         let manifests = State::new(ManifestsDir);
 
-        let read1 = manifests.read(&path, &"hello".into());
-        let read2 = manifests.read(&path, &"hello".into());
-        let read3 = manifests.read(&path, &"hello".into());
+        let _read1 = manifests.read(&path, &"hello".into());
+        let _read2 = manifests.read(&path, &"hello".into());
+        let _read3 = manifests.read(&path, &"hello".into());
         let write1 = manifests.write(
             &path,
             ManifestInput::Constructed(Manifest::build("hello".into()).finish()),

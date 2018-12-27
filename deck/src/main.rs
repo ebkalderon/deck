@@ -27,5 +27,5 @@ pub enum Subcommand {
 }
 
 fn main() {
-    let opt = Opt::from_args();
+    let _opt = Opt::from_args();
 }

@@ -13,7 +13,7 @@ use package::Manifest;
 pub struct BuildManifest(Box<dyn Stream<Item = Progress, Error = ()> + Send>);
 
 impl BuildManifest {
-    pub fn new(ctx: Context, manifest: Manifest) -> Self {
+    pub fn new(_ctx: Context, manifest: Manifest) -> Self {
         let building = Progress::Building(Building {
             package_id: manifest.id().clone(),
             current_task: 3,
