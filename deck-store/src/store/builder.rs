@@ -62,7 +62,6 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::iter::IntoIterator;
 
 use futures::{future, Future, Poll, Stream};
 
@@ -298,11 +297,7 @@ impl BuildStream {
     ///
     /// Requires a `BuildFuture` which represents the entire build graph, a list of package IDs
     /// being built, and the receiving half of the `ProgressReceiver` used to report progress.
-    pub(crate) fn new(
-        future: BuildFuture,
-        pkgs: BTreeSet<ManifestId>,
-        rx: ProgressReceiver,
-    ) -> Self {
+    fn new(future: BuildFuture, pkgs: BTreeSet<ManifestId>, rx: ProgressReceiver) -> Self {
         let building = future::lazy(move || {
             tokio::spawn(future.map_err(|_| ()).map(|_| ()));
 

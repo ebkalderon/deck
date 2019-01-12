@@ -1,4 +1,5 @@
 use std::fs;
+// use std::iter::IntoIterator;
 use std::path::PathBuf;
 
 use futures::Stream;
@@ -45,9 +46,9 @@ impl StoreDir {
         unimplemented!()
     }
 
-    pub fn contains_output(&self, output_id: OutputId) -> bool {
+    pub fn contains_output(&self, id: OutputId) -> bool {
         let prefix = &self.prefix;
-        self.outputs.contains(prefix, &output_id)
+        self.outputs.contains(prefix, &id)
     }
 
     pub fn create_output_dir(&self, package_id: String) -> WriteFuture<OutputId, PathBuf> {

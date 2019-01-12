@@ -4,8 +4,6 @@ extern crate deck_client;
 #[macro_use]
 extern crate structopt;
 
-use std::process::Command;
-
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
