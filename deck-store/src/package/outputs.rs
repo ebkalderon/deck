@@ -78,7 +78,6 @@ impl<'de> Deserialize<'de> for Outputs {
                 A: SeqAccess<'de>,
             {
                 let mut set = BTreeSet::<Output>::new();
-
                 while let Some(output) = seq.next_element()? {
                     set.insert(output);
                 }
