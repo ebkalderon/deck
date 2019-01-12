@@ -1,5 +1,6 @@
 [package]
-id = "hello"
+name = "hello"
+version = "1.0.0"
 dependencies = []
 build-dependencies = []
 dev-dependencies = []

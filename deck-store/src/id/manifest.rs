@@ -2,8 +2,11 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::ser::{Serialize, Serializer};
+
 use super::{name::Name, FilesystemId};
-use hash::Hash;
+use crate::hash::Hash;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ManifestId {
@@ -13,22 +16,33 @@ pub struct ManifestId {
 }
 
 impl ManifestId {
-    pub fn new(name: String, version: String, hash: Hash) -> Result<Self, ()> {
-        Ok(ManifestId {
-            name: Name::new(name)?,
+    pub fn new(name: Name, version: String, hash: Hash) -> Self {
+        ManifestId {
+            name,
             version,
             hash,
+        }
+    }
+
+    pub fn parse<T: AsRef<str>>(name: T, version: T, hash: T) -> Result<Self, ()> {
+        Ok(ManifestId {
+            name: name.as_ref().parse()?,
+            version: version.as_ref().into(),
+            hash: hash.as_ref().parse()?,
         })
     }
 
+    #[inline]
     pub fn name(&self) -> &str {
         self.name.as_str()
     }
 
+    #[inline]
     pub fn version(&self) -> &str {
         self.version.as_str()
     }
 
+    #[inline]
     pub fn hash(&self) -> &Hash {
         &self.hash
     }
@@ -36,7 +50,7 @@ impl ManifestId {
 
 impl Display for ManifestId {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        write!(fmt, "{}-{}-{}", self.name, self.version, self.hash)
+        write!(fmt, "{}@{}-{}", self.name, self.version, self.hash)
     }
 }
 
@@ -57,16 +71,50 @@ impl FromStr for ManifestId {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut tokens = s.rsplitn(3, '-');
-        let hash = tokens.next().ok_or(()).and_then(|s| s.parse())?;
-        let version = tokens.next().map(|s| s.to_string()).ok_or(())?;
-        let name = tokens.next().map(|s| s.to_string()).ok_or(())?;
+        let mut tokens = s.rsplitn(2, '-');
+        let hash = tokens.next().ok_or(())?;
+        let remainder = tokens.next().ok_or(())?;
 
-        if tokens.count() != 0 {
-            return Err(());
+        let mut tokens = remainder.rsplitn(2, '@');
+        let version = tokens.next().ok_or(())?;
+        let name = tokens.next().ok_or(())?;
+
+        ManifestId::parse(name, version, hash)
+    }
+}
+
+impl<'de> Deserialize<'de> for ManifestId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct ManifestIdVisitor;
+
+        impl<'de> Visitor<'de> for ManifestIdVisitor {
+            type Value = ManifestId;
+
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                fmt.write_str("a manifest ID with the form `name-version-hash`")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                ManifestId::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
+            }
         }
 
-        ManifestId::new(name, version, hash)
+        deserializer.deserialize_str(ManifestIdVisitor)
+    }
+}
+
+impl Serialize for ManifestId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -75,12 +123,12 @@ mod tests {
     use super::*;
 
     const HASH: &'static str = "fc3j3vub6kodu4jtfoakfs5xhumqi62m";
-    const EXAMPLE_ID: &'static str = "foobar-1.0.0-fc3j3vub6kodu4jtfoakfs5xhumqi62m";
+    const EXAMPLE_ID: &'static str = "foobar@1.0.0-fc3j3vub6kodu4jtfoakfs5xhumqi62m";
 
     #[test]
     fn is_send_and_sync() {
-        fn verify<T: Send + Sync>() {}
-        verify::<ManifestId>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<ManifestId>();
     }
 
     #[test]
@@ -92,9 +140,7 @@ mod tests {
 
     #[test]
     fn parse_from_string() {
-        let hash = HASH.parse().expect("Failed to parse hash from constant!");
-        let expected = ManifestId::new("foobar".to_string(), "1.0.0".to_string(), hash)
-            .expect("Failed to init ID!");
+        let expected = ManifestId::parse("foobar", "1.0.0", HASH).expect("Failed to init ID!");
         let actual: ManifestId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
         assert_eq!(expected, actual);
         assert_eq!(expected.name(), actual.name());

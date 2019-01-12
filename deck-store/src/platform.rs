@@ -117,7 +117,7 @@ impl Display for UnknownArch {
 }
 
 impl Error for UnknownArch {
-    fn cause(&self) -> Option<&(dyn Error + 'static)> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
     }
 }
@@ -159,7 +159,7 @@ impl Display for UnknownOs {
 }
 
 impl Error for UnknownOs {
-    fn cause(&self) -> Option<&(dyn Error + 'static)> {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
     }
 }
@@ -206,8 +206,8 @@ mod tests {
 
     #[test]
     fn is_send_and_sync() {
-        fn verify<T: Send + Sync>() {}
-        verify::<Platform>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Platform>();
     }
 
     #[test]

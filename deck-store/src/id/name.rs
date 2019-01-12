@@ -1,6 +1,9 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::str::FromStr;
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+use serde::de::{self, Deserialize, Deserializer, Visitor};
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Name(String);
 
 impl Name {
@@ -21,8 +24,35 @@ impl Name {
         Ok(Name(s))
     }
 
+    #[inline]
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for Name {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct NameVisitor;
+
+        impl<'de> Visitor<'de> for NameVisitor {
+            type Value = Name;
+
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                fmt.write_str("a non-empty string")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Name::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
+            }
+        }
+
+        deserializer.deserialize_str(NameVisitor)
     }
 }
 
@@ -32,14 +62,23 @@ impl Display for Name {
     }
 }
 
+impl FromStr for Name {
+    type Err = ();
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Name::new(s)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn is_send_sync() {
-        fn verify<T: Send + Sync>() {}
-        verify::<Name>();
+    fn is_send_and_sync() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Name>();
     }
 
     #[test]

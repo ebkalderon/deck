@@ -6,34 +6,30 @@ enum State<P, D> {
     Done(D),
 }
 
-trait Fetchable {
+trait Fetchable: Send {
     type Progress;
 
-    fn fetch(self, path: &Path) -> impl Stream<Item = Self::Progress, Error = ()>;
+    fn fetch(self, temp_target: &Path) -> impl Stream<Item = Self::Progress, Error = ()>;
 }
 
-trait Directory<F: Fetchable> {
+trait Directory {
     type Id;
-    type Read;
-    type Write;
+    type Input;
+    type Progress;
+    type Output;
 
     // Computes a new temporary ID from the given write input.
     // This ID might change later after the data is written to disk.
-    fn compute_id(&self, data: &Self::Write) -> impl Future<Item = Self::Id, Error = ()>;
+    fn compute_id(&self, data: &Self::Input) -> impl Future<Item = Self::Id, Error = ()>;
 
     // Checks whether the ID exists.
     // If so, returns some data that the builder might want.
-    fn read(&self, target: &Path, id: &Self::Id) -> impl Future<Item = Option<Self::Read>, Error = ()>;
+    fn read(&self, target: &Path, id: &Self::Id) -> impl Future<Item = Option<Self::Output>, Error = ()>;
 
     // Writes the provided data directly to disk.
     // Once the data is written, a new ID is computed.
     // If the data already exists on disk, the future ends immediately.
-    fn write(&self, target: &Path, data: Self::Write) -> impl Future<Item = Self::Id, Error = ()>;
-
-    // Fetches the data from a remote source and writes it to the store.
-    // Returns a stream of items marking progress.
-    // If the data already exists on disk, the stream ends immediately.
-    fn fetch(&self, fetcher: Fetcher<F>) -> impl Stream<Item = State<F::Progress, Self::Id>, Error = ()>;
+    fn write(&self, target: &Path, data: Self::Input) -> impl Stream<Item = State<Self::Progress, Self::Id>, Error = ()>;
 }
 ```
 
@@ -48,7 +44,7 @@ struct FetchUri {
 impl Fetchable for FetchUri {
     type Progress = hyper::Chunk;
 
-    fn fetch(self, path: &Path) -> impl Stream<Item = Self::Progress, Error = ()> { ... }
+    fn fetch(self, temp_target: &Path) -> impl Stream<Item = Self::Progress, Error = ()> { ... }
 }
 
 struct FetchGit {
@@ -59,7 +55,7 @@ struct FetchGit {
 impl Fetchable for FetchGit {
     type Progress = git2::Progress<'static>;
 
-    fn fetch(self, path: &Path) -> impl Stream<Item = Self::Progress, Error = ()> { ... }
+    fn fetch(self, temp_target: &Path) -> impl Stream<Item = Self::Progress, Error = ()> { ... }
 }
 ```
 
@@ -78,7 +74,11 @@ impl<F: Fetchable> Fetcher<F> {
         U: IntoFuture<Item = I, Error = ()> + Send + 'static,
         U::Future: Send + 'static,
     {
-        ...
+        // Fetch resource and save it to `output` while streaming progress.
+        // Map `State::Progress` over each `F::Progress`.
+        // Chain to the stream a future which executes `compute_id()`.
+        // Map `State::Done` over the final future output.
+        // Return the stream.
     }
 }
 ```
@@ -114,11 +114,6 @@ impl<F: FetchManifest> Directory<F> for ManifestsDir {
         // Write raw JSON to file.
         // Return same ID given from `path`.
     }
-
-    fn fetch(&self, fetcher: Fetcher<F>) -> impl Stream<Item = State<F::Progress, Self::Id>, Error = ()> {
-        // Call `fetcher.fetch()`, which fetches the manifest and returns a stream of download progress.
-        // Pass in a closure which opens the file, locks it shared, validates it, and computes a new ID.
-    }
 }
 ```
 
@@ -152,11 +147,6 @@ impl<F: FetchOutput> Directory<F> for OutputsDir {
         // If any error occurs or the directory already exists, return Err(e).
         // Return the ID given from `path`.
     }
-
-    fn fetch(&self, fetcher: Fetcher<F>) -> impl Stream<Item = State<F::Progress, Self::Id>, Error = ()> {
-        // Call `fetcher.fetch()`, which fetches the output archive and returns a stream of download progress.
-        // Pass in a closure which extracts the archive, deletes the original archive, and computes a new ID.
-    }
 }
 ```
 
@@ -188,11 +178,6 @@ impl<F: FetchSource> Directory<F> for SourcesDir {
         // Copy source from external path to `path`.
         // Compute new ID by taking hash of file/directory.
         // Return new ID.
-    }
-
-    fn fetch(&self, fetcher: Fetcher<F>) -> impl Stream<Item = State<F::Progress, Self::Id>, Error = ()> {
-        // Call `fetcher.fetch()`, which fetches the source and returns a stream of download progress.
-        // Pass in a closure which recursively hashes the file/directory and computes the final ID.
     }
 }
 ```

@@ -66,12 +66,13 @@ use std::iter::IntoIterator;
 
 use futures::{future, Future, Poll, Stream};
 
+use super::closure::Closure;
 use super::context::Context;
-use super::fs::Closure;
-use super::job::progress::{self, Progress, ProgressReceiver, ProgressSender};
 use super::job::{BuildManifest, FetchSource, IntoJob};
+use super::progress::{self, Progress, ProgressReceiver, ProgressSender};
+use crate::id::ManifestId;
 
-type BuildGraph = BTreeMap<String, BuildFuture>;
+type BuildGraph = BTreeMap<ManifestId, BuildFuture>;
 type Channel = (ProgressSender, ProgressReceiver);
 
 /// Asynchronous builder for a set of packages.
@@ -98,6 +99,7 @@ impl Builder {
     /// progress channels.
     ///
     /// This constructor is only called internally, used when recursively building dependencies.
+    #[inline]
     fn new_recursive(context: Context, closure: Closure, graph: BuildGraph, prog: Channel) -> Self {
         Builder {
             context,
@@ -110,13 +112,22 @@ impl Builder {
     /// Fetches all sources required to build this package.
     pub fn fetch_sources(self) -> SourcesFetched {
         let closure = self.closure.clone();
-        let manifest = &closure.packages[&closure.target];
+        let manifest = closure.target_manifest();
+
+        // TODO: We need to handle cases where a target does not need to be built.
+        //
+        // 1. If an already-built version of the target manifest exists on disk, push to
+        //    `dependencies` an immediately-returning job for `manifest` pointing to the disk. Do
+        //    not actually download any sources, manifests, or dependencies because they already
+        //    exist on disk.
+        // 2. If an already-built version of the target is available online, push to `dependencies`
+        //    a `FetchOutput` job for fetching the built package from the network.
 
         let download_sources = {
             let mut jobs = Vec::with_capacity(manifest.sources().count());
             for src in manifest.sources() {
                 let context = self.context.clone();
-                let target = self.closure.target.clone();
+                let target = self.closure.target().clone();
                 let source = src.clone();
                 let progress_tx = self.progress.0.clone();
                 jobs.push(FetchSource::new(context, target, source).into_job(progress_tx));
@@ -152,25 +163,20 @@ pub struct SourcesFetched {
 impl SourcesFetched {
     /// Recursively traverses the build graph and builds all package dependencies.
     pub fn build_dependencies(mut self) -> DependenciesBuilt {
-        println!("Building deps for {}", self.closure.target);
+        println!("Building deps for {}", self.closure.target());
 
-        let closure = self.closure.clone();
-        let dependencies = closure.packages[&closure.target].dependencies();
+        let dependencies = self.closure.dependent_closures();
 
-        for dep in dependencies {
+        for dep_closure in dependencies {
             let context = self.context.clone();
-            let id = self.closure.packages[dep].id().clone();
-            let mut closure = self.closure.clone();
-            closure.target = id;
-
-            let builder = Builder::new_recursive(context, closure, self.graph, self.progress);
+            let builder = Builder::new_recursive(context, dep_closure, self.graph, self.progress);
             let sources_done = builder.fetch_sources();
             let dependencies_done = sources_done.build_dependencies();
-            let (built, graph, prog) = dependencies_done.build_package_recursively();
+            let (built, graph, progress) = dependencies_done.build_package_recursively();
 
             self.dependencies.push(built);
             self.graph = graph;
-            self.progress = prog;
+            self.progress = progress;
         }
 
         DependenciesBuilt {
@@ -220,11 +226,11 @@ impl DependenciesBuilt {
     /// `BuildFuture`s together into a directed acyclic graph which can be executed on a `tokio`
     /// runtime.
     fn build_package_impl(&mut self) -> BuildFuture {
-        match self.graph.get(&self.closure.target).cloned() {
+        match self.graph.get(&self.closure.target()).cloned() {
             Some(node) => return node,
             None => {
                 let context = self.context.clone();
-                let manifest = self.closure.packages[&self.closure.target].clone();
+                let manifest = self.closure.target_manifest().clone();
                 let progress_tx = self.progress.0.clone();
                 let deps = self.dependencies.take().expect("dependencies empty");
 
@@ -233,8 +239,8 @@ impl DependenciesBuilt {
                     .and_then(move |_| BuildManifest::new(context, manifest).into_job(progress_tx));
 
                 let future = BuildFuture::new(building);
-                self.graph.insert(self.closure.target.clone(), future);
-                self.graph[&self.closure.target].clone()
+                self.graph.insert(self.closure.target().clone(), future);
+                self.graph[self.closure.target()].clone()
             }
         }
     }
@@ -274,6 +280,7 @@ impl Future for BuildFuture {
     type Item = future::SharedItem<()>;
     type Error = future::SharedError<()>;
 
+    #[inline]
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.0.poll()
     }
@@ -283,7 +290,7 @@ impl Future for BuildFuture {
 #[must_use = "streams do nothing unless polled"]
 pub struct BuildStream {
     inner: Box<dyn Stream<Item = Progress, Error = ()> + Send>,
-    packages: BTreeSet<String>,
+    packages: BTreeSet<ManifestId>,
 }
 
 impl BuildStream {
@@ -291,7 +298,11 @@ impl BuildStream {
     ///
     /// Requires a `BuildFuture` which represents the entire build graph, a list of package IDs
     /// being built, and the receiving half of the `ProgressReceiver` used to report progress.
-    pub(crate) fn new(future: BuildFuture, pkgs: BTreeSet<String>, rx: ProgressReceiver) -> Self {
+    pub(crate) fn new(
+        future: BuildFuture,
+        pkgs: BTreeSet<ManifestId>,
+        rx: ProgressReceiver,
+    ) -> Self {
         let building = future::lazy(move || {
             tokio::spawn(future.map_err(|_| ()).map(|_| ()));
 
@@ -310,7 +321,8 @@ impl BuildStream {
     }
 
     /// Returns a topologically sorted list of packages being built.
-    pub fn packages_affected(&self) -> impl Iterator<Item = &String> {
+    #[inline]
+    pub fn packages_affected(&self) -> impl Iterator<Item = &ManifestId> {
         self.packages.iter()
     }
 }
@@ -321,7 +333,8 @@ impl Debug for BuildStream {
             .field(
                 "inner",
                 &"Box<dyn Stream<Item = Progress, Error = ()> + Send>",
-            ).field("packages", &self.packages)
+            )
+            .field("packages", &self.packages)
             .finish()
     }
 }
@@ -330,6 +343,7 @@ impl Stream for BuildStream {
     type Item = Progress;
     type Error = ();
 
+    #[inline]
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         self.inner.poll()
     }

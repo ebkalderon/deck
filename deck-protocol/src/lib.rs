@@ -1,11 +1,7 @@
 #![forbid(unsafe_code)]
 
-extern crate bytes;
-extern crate prost;
 #[macro_use]
 extern crate prost_derive;
-extern crate prost_types;
-extern crate tower_grpc;
 
 /// Common data types used across the Deck protocols.
 pub mod core {

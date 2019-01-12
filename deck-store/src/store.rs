@@ -1,25 +1,24 @@
+pub use self::builder::BuildStream;
+pub use self::closure::Closure;
+
 use std::fmt::Debug;
 
 use futures::Future;
 
-use binary_cache::BinaryCache;
-use error::BuildError;
-use manifest::Manifest;
-use platform::Platform;
+use crate::binary_cache::BinaryCache;
+use crate::package::Manifest;
+use crate::platform::Platform;
 
-#[cfg(feature = "local")]
-pub mod local;
-#[cfg(feature = "ssh")]
-pub mod ssh;
+pub mod builder;
+pub mod progress;
+pub mod remote;
 
-mod id;
-
-#[derive(Debug)]
-pub struct Package;
+mod closure;
+mod context;
+mod fs;
+mod job;
 
 pub type PlatformFuture = Box<dyn Future<Item = Vec<Platform>, Error = ()>>;
-
-pub type PackageFuture = Box<dyn Future<Item = Package, Error = BuildError>>;
 
 pub type AddedFuture = Box<dyn Future<Item = (), Error = ()>>;
 
@@ -28,7 +27,7 @@ pub type VerifyFuture = Box<dyn Future<Item = (), Error = ()>>;
 pub trait Store: Debug {
     fn supported_platforms(&self) -> PlatformFuture;
 
-    fn build_package(&mut self, manifest: &Manifest) -> PackageFuture;
+    fn build_package(&mut self, manifest: &Manifest) -> BuildStream;
 
     fn add_binary_cache<B: BinaryCache>(&mut self, cache: B) -> AddedFuture;
 

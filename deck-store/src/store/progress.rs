@@ -1,24 +1,26 @@
 use chrono::{offset::Utc, DateTime};
 use futures::sync::mpsc::{self, Receiver, Sender};
 
-pub type ProgressSender = Sender<Result<Progress, ()>>;
-pub type ProgressReceiver = Receiver<Result<Progress, ()>>;
+use crate::id::ManifestId;
 
-pub fn progress_channel(buffer: usize) -> (ProgressSender, ProgressReceiver) {
+pub(crate) type ProgressSender = Sender<Result<Progress, ()>>;
+pub(crate) type ProgressReceiver = Receiver<Result<Progress, ()>>;
+
+pub(crate) fn progress_channel(buffer: usize) -> (ProgressSender, ProgressReceiver) {
     mpsc::channel(buffer)
 }
 
 #[derive(Clone, Debug)]
 pub enum Progress {
     Downloading(Downloading),
-    Blocked { package_id: String },
+    Blocked { package_id: ManifestId },
     Building(Building),
     Finished(Finished),
 }
 
 #[derive(Clone, Debug)]
 pub struct Downloading {
-    pub package_id: String,
+    pub package_id: ManifestId,
     pub source: String,
     pub downloaded_bytes: u64,
     pub total_bytes: Option<u64>,
@@ -36,7 +38,7 @@ pub enum BuildingStatus {
 
 #[derive(Clone, Debug)]
 pub struct Building {
-    pub package_id: String,
+    pub package_id: ManifestId,
     pub status: BuildingStatus,
     pub current_task: u32,
     pub total_tasks: u32,
@@ -54,7 +56,7 @@ pub enum FinishedStatus {
 
 #[derive(Clone, Debug)]
 pub struct Finished {
-    pub package_id: String,
+    pub package_id: ManifestId,
     pub status: FinishedStatus,
     pub timestamp: DateTime<Utc>,
 }

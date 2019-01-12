@@ -5,15 +5,16 @@ use hyper::header::CONTENT_LENGTH;
 use hyper::Uri;
 
 use super::super::context::Context;
-use super::progress::{Downloading, Progress};
+use super::super::progress::{Downloading, Progress};
 use super::IntoJob;
-use package::Source;
+use crate::id::ManifestId;
+use crate::package::Source;
 
 #[must_use = "streams do nothing unless polled"]
 pub struct FetchSource(Box<dyn Stream<Item = Progress, Error = ()> + Send>);
 
 impl FetchSource {
-    pub fn new(ctx: Context, id: String, source: Source) -> Self {
+    pub fn new(ctx: Context, id: ManifestId, source: Source) -> Self {
         match source {
             Source::Uri { uri, hash } => fetch_uri(ctx, id, uri, hash),
             Source::Git => fetch_git(ctx, id),
@@ -44,12 +45,12 @@ impl Stream for FetchSource {
     }
 }
 
-fn fetch_uri(ctx: Context, id: String, uri: Uri, _hash: String) -> FetchSource {
+fn fetch_uri(ctx: Context, id: ManifestId, uri: String, _hash: String) -> FetchSource {
     let client = ctx.client.clone();
     let _store = ctx.store.clone();
 
     let downloading = client
-        .get(uri.clone())
+        .get(uri.parse().unwrap())
         .map_err(|e| eprintln!("failed to connect to URI: {}", e))
         .map(move |resp| {
             let len = resp
@@ -62,7 +63,7 @@ fn fetch_uri(ctx: Context, id: String, uri: Uri, _hash: String) -> FetchSource {
                 package_id: id.clone(),
                 downloaded_bytes: 0,
                 total_bytes: len,
-                source: uri.to_string(),
+                source: uri,
             };
 
             let stream = resp.into_body().map_err(|_| ()).map(move |chunk| {
@@ -81,6 +82,6 @@ fn fetch_uri(ctx: Context, id: String, uri: Uri, _hash: String) -> FetchSource {
     FetchSource::from_stream(completing.flatten_stream())
 }
 
-fn fetch_git(_ctx: Context, id: String) -> FetchSource {
+fn fetch_git(_ctx: Context, id: ManifestId) -> FetchSource {
     FetchSource::from_stream(stream::iter_ok(vec![Progress::Blocked { package_id: id }]))
 }

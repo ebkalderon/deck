@@ -8,7 +8,8 @@ use futures::{Async, Future, Poll};
 use futures_locks::RwLock;
 use tokio::fs;
 
-use super::dir::{Directory, DirectoryFuture, ReadFuture, WriteFuture};
+use super::dir::{Directory, DirectoryFuture, FetchStream, ReadFuture, WriteFuture};
+// use super::fetcher::Fetcher;
 
 const TEMP_DIR_NAME: &'static str = "tmp";
 
@@ -32,6 +33,11 @@ where
             directory: Arc::new(directory),
             write_queue: Arc::new(RwLock::new(HashMap::new())),
         }
+    }
+
+    pub fn contains(&self, prefix: &Path, id: &D::Id) -> bool {
+        let path = prefix.join(D::NAME).join(id.to_string());
+        path.exists()
     }
 
     pub fn read(&self, prefix: &Path, id: &D::Id) -> ReadFuture<D::Output> {
@@ -61,7 +67,9 @@ where
         // temporary one here and use it to mark ourselves as writing. A new `D::Id`, which may be
         // different from the temporary one, will be returned from `Directory::write()` along with
         // the `D::Output`.
-        let compute_temp_id = self.directory.compute_id(&input);
+        let compute_temp_id = self.directory.precompute_id(&input);
+
+        // TODO: If `<prefix>/tmp/<temp_id>` or `<prefix>/D::NAME/<temp_id>` exists, return early.
 
         let write_queue = self.write_queue.clone();
         let mark_as_writing = compute_temp_id.and_then(|temp_id| {
@@ -108,13 +116,19 @@ where
             .inspect(|_| /* TODO: Need to register paths in database here. */ ())
             .and_then(|(temp_id, new_id, out)| {
                 check_writers.map(move |w| (w, temp_id, new_id, out))
-            }).map(|(mut writers, temp_id, new_id, output)| {
+            })
+            .map(|(mut writers, temp_id, new_id, output)| {
                 writers.remove(&temp_id);
                 (new_id, output)
             });
 
         DirectoryFuture::new(output)
     }
+
+    // pub fn fetch<F: Fetcher>(&self, prefix: &Path, fetcher: F) -> FetchStream<D::Id> {
+    //     // How do we pre-compute the ID? The method requires a `D::Input`.
+    //     unimplemented!()
+    // }
 }
 
 #[derive(Clone, Debug)]

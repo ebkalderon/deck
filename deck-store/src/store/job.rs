@@ -1,22 +1,22 @@
 pub use self::build_manifest::BuildManifest;
+pub use self::fetch_output::FetchOutput;
 pub use self::fetch_source::FetchSource;
-
-pub mod progress;
-
-mod build_manifest;
-mod fetch_source;
 
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 
 use futures::{Future, Poll, Sink, Stream};
 
-use self::progress::{Progress, ProgressSender};
+use super::progress::{Progress, ProgressSender};
+
+mod build_manifest;
+mod fetch_output;
+mod fetch_source;
 
 #[must_use = "futures do nothing unless polled"]
 pub struct JobFuture(Box<dyn Future<Item = (), Error = ()> + Send>);
 
 impl JobFuture {
-    pub fn from_stream<S>(inner: S, progress: ProgressSender) -> Self
+    pub(crate) fn from_stream<S>(inner: S, progress: ProgressSender) -> Self
     where
         S: Stream<Item = Progress, Error = ()> + Send + 'static,
     {

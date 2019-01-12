@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::io::BufRead;
 use std::str::FromStr;
 
@@ -6,13 +6,16 @@ use blake2::digest::{Input, VariableOutput};
 use blake2::VarBlake2b;
 use data_encoding::BASE32_NOPAD;
 use rand::{self, RngCore};
+use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::ser::{Serialize, Serializer};
 
 const HASH_LENGTH: usize = 20;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Hash([u8; HASH_LENGTH]);
 
 impl Hash {
+    #[inline]
     pub fn compute() -> Builder {
         Builder::new()
     }
@@ -38,6 +41,15 @@ impl Display for Hash {
     }
 }
 
+impl Debug for Hash {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        let encoded = BASE32_NOPAD.encode(&self.0);
+        fmt.debug_tuple(stringify!(Hash))
+            .field(&format!("{}", encoded.to_lowercase()))
+            .finish()
+    }
+}
+
 impl FromStr for Hash {
     type Err = ();
 
@@ -53,6 +65,41 @@ impl FromStr for Hash {
         } else {
             Err(())
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for Hash {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct HashVisitor;
+
+        impl<'de> Visitor<'de> for HashVisitor {
+            type Value = Hash;
+
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                fmt.write_str("a 20-byte output Blake2b hash encoded in base32 format")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Hash::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
+            }
+        }
+
+        deserializer.deserialize_str(HashVisitor)
+    }
+}
+
+impl Serialize for Hash {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -86,8 +133,8 @@ mod tests {
 
     #[test]
     fn is_send_and_sync() {
-        fn check_send_and_sync<T: Send + Sync>() {}
-        check_send_and_sync::<Hash>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<Hash>();
     }
 
     #[test]

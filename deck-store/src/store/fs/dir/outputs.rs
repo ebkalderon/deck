@@ -2,17 +2,23 @@ use std::path::{Path, PathBuf};
 
 use super::{Directory, IdFuture, ReadFuture, WriteFuture};
 
+use crate::id::OutputId;
+
 #[derive(Debug)]
 pub struct OutputsDir;
 
 impl Directory for OutputsDir {
-    type Id = String;
+    type Id = OutputId;
     type Input = String;
     type Output = PathBuf;
 
     const NAME: &'static str = "outputs";
 
-    fn compute_id(&self, _input: &Self::Input) -> IdFuture<Self::Id> {
+    fn precompute_id(&self, _input: &Self::Input) -> IdFuture<Self::Id> {
+        unimplemented!()
+    }
+
+    fn compute_id(&self, _target: &Path) -> IdFuture<Self::Id> {
         unimplemented!()
     }
 

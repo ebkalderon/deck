@@ -3,14 +3,10 @@
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations)]
 
-extern crate fnv;
-extern crate futures;
 #[macro_use]
 extern crate serde;
-extern crate tokio;
-extern crate toml;
 
-use config::Config;
+use crate::config::Config;
 
 mod config;
 

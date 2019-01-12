@@ -7,32 +7,36 @@ use tokio::io::Write;
 
 use super::super::file::FileFutureExt;
 use super::{Directory, DirectoryFuture, IdFuture, ReadFuture, WriteFuture};
-use package::Source;
+use crate::id::SourceId;
+use crate::package::Source;
 
 #[derive(Debug)]
 pub struct SourcesDir;
 
 impl Directory for SourcesDir {
-    type Id = String;
+    type Id = SourceId;
     type Input = (Source, Box<dyn Stream<Item = Chunk, Error = ()> + Send>);
     type Output = PathBuf;
 
     const NAME: &'static str = "sources";
 
-    // Compute temporary ID from the `Source`.
-    fn compute_id(&self, input: &Self::Input) -> IdFuture<Self::Id> {
+    fn precompute_id(&self, input: &Self::Input) -> IdFuture<Self::Id> {
         let id = match input.0 {
             Source::Uri { ref uri, ref hash } => {
-                let file = Path::new(uri.path())
+                let file = Path::new(uri)
                     .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("index.html");
-                format!("{}-{}", file, hash)
+                format!("{}-{}", file, hash).parse().unwrap()
             }
             Source::Git => unimplemented!(),
         };
 
         Box::new(future::ok(id))
+    }
+
+    fn compute_id(&self, _target: &Path) -> IdFuture<Self::Id> {
+        unimplemented!()
     }
 
     // If the `target` ID exists, we get the path to the source. Otherwise, nothing.
@@ -44,14 +48,7 @@ impl Directory for SourcesDir {
         }
     }
 
-    // Take a `Source` and write it to disk, reporting the progress as it goes.
-    //
-    // # Issues
-    //
-    // * If this is a `Source::Uri`, we use `hyper::Client` to download the URI. The problem is, we
-    //   need to report the progress somehow. We can't return a stream here, because `Self::Output`
-    //   is also used in `read()`, and also we can't use the `Progress` type because it's meant to
-    //   be used by the `FetchSource` job, not here.
+    // Take a `Source` or a `Path` and write it to the directory, computing a new ID if needed.
     fn write(&self, target: &Path, input: Self::Input) -> WriteFuture<Self::Id, Self::Output> {
         let output_path = target.to_owned();
         let id = target
@@ -66,8 +63,9 @@ impl Directory for SourcesDir {
             .map_err(|_| ())
             .and_then(|mut file| {
                 stream.for_each(move |chunk| file.write_all(&chunk).map_err(|_| ()))
-            }).and_then(|_| /* TODO: validate file's hash here. */ Ok(()))
-            .map(move |_| (id, output_path));
+            })
+            .and_then(|_| /* TODO: validate file's hash here. */ Ok(()))
+            .map(move |_| (id.parse().unwrap(), output_path));
 
         DirectoryFuture::new(write_file)
     }

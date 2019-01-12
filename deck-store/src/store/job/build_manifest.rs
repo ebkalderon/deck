@@ -1,21 +1,23 @@
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::time::{Duration, Instant};
 
+use chrono::Utc;
 use futures::{future, stream, Future, Poll, Stream};
 
 use super::super::context::Context;
-use super::progress::{Building, BuildingStatus, Finished, FinishedStatus, Progress};
+use super::super::progress::{Building, BuildingStatus, Finished, FinishedStatus, Progress};
 use super::IntoJob;
-use chrono::Utc;
-use package::Manifest;
+use crate::package::Manifest;
 
 #[must_use = "streams do nothing unless polled"]
 pub struct BuildManifest(Box<dyn Stream<Item = Progress, Error = ()> + Send>);
 
 impl BuildManifest {
     pub fn new(_ctx: Context, manifest: Manifest) -> Self {
+        let id = manifest.compute_id();
+
         let building = Progress::Building(Building {
-            package_id: manifest.id().clone(),
+            package_id: id.clone(),
             current_task: 3,
             total_tasks: 5,
             status: BuildingStatus::Compiling,
@@ -25,7 +27,7 @@ impl BuildManifest {
         });
 
         let finished = Progress::Finished(Finished {
-            package_id: manifest.id().clone(),
+            package_id: id,
             status: FinishedStatus::Built,
             timestamp: Utc::now(),
         });

@@ -1,15 +1,28 @@
+//! Filesystem-level file locking for Tokio.
+
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::fs::File as StdFile;
-use std::ops::Deref;
-use std::ops::DerefMut;
+use std::ops::{Deref, DerefMut};
 
 use fs2::FileExt;
 use futures::{Async, Future, Poll};
 use tokio::fs::File;
 use tokio::io::Error as IoError;
 
+/// Trait adding file locking functionality to `tokio::File`.
+///
+/// This trait is named `FileFutureExt` instead of `FileExt` to avoid conflicting with
+/// `fs2::FileExt`, which provides the underlying implementation.
 pub trait FileFutureExt {
+    /// Locks the file for exclusive usage, blocking if the file is currently locked.
+    ///
+    /// Unlike `fs2::FileExt::lock_exclusive()`, this method will not stall the underlying futures
+    /// threadpool.
     fn lock_exclusive(self) -> LockedFuture;
+    /// Locks the file for shared usage, blocking if the file is currently locked exclusively.
+    ///
+    /// Unlike `fs2::FileExt::lock_exclusive()`, this method will not stall the underlying futures
+    /// threadpool.
     fn lock_shared(self) -> LockedFuture;
 }
 
@@ -17,19 +30,23 @@ impl<F> FileFutureExt for F
 where
     F: Future<Item = File, Error = IoError> + Send + 'static,
 {
+    #[inline]
     fn lock_exclusive(self) -> LockedFuture {
         LockedFuture::new(self, Kind::Exclusive)
     }
 
+    #[inline]
     fn lock_shared(self) -> LockedFuture {
         LockedFuture::new(self, Kind::Shared)
     }
 }
 
+/// Wrapper type for `std::fs::File` which automatically unlocks the file when dropped.
 #[derive(Debug)]
 pub struct LockedFile(Option<File>);
 
 impl LockedFile {
+    #[inline]
     fn new(file: File) -> Self {
         LockedFile(Some(file))
     }
@@ -57,6 +74,9 @@ impl Drop for LockedFile {
     }
 }
 
+/// A `Future` which attempts to acquire a file lock and will resolve to a [`LockedFile`].
+///
+/// [`LockedFile`]: ./struct.LockedFile.html
 #[derive(Debug)]
 #[must_use = "futures do nothing unless polled"]
 pub struct LockedFuture {

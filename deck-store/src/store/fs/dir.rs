@@ -3,10 +3,13 @@ pub use self::outputs::OutputsDir;
 pub use self::sources::SourcesDir;
 
 use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::hash::Hash;
 use std::path::Path;
 
-use futures::{Future, Poll};
+use futures::{Future, Poll, Stream};
+
+use super::super::progress::Progress;
+// use super::fetcher::Fetcher;
+use crate::id::FilesystemId;
 
 mod manifests;
 mod outputs;
@@ -18,14 +21,17 @@ pub type ReadFuture<O> = DirectoryFuture<Option<O>>;
 
 pub type WriteFuture<I, O> = DirectoryFuture<(I, O)>;
 
+pub type FetchStream<I> = Box<dyn Stream<Item = FetchState<I>, Error = ()> + Send>;
+
 pub trait Directory: Debug + Send + Sync {
-    type Id: Clone + Eq + Hash + Send + Sync + ToString;
+    type Id: FilesystemId + 'static;
     type Input: Send;
-    type Output: Send;
+    type Output: Send + 'static;
 
     const NAME: &'static str;
 
-    fn compute_id(&self, input: &Self::Input) -> IdFuture<Self::Id>;
+    fn precompute_id(&self, input: &Self::Input) -> IdFuture<Self::Id>;
+    fn compute_id(&self, target: &Path) -> IdFuture<Self::Id>;
     fn read(&self, target: &Path, id: &Self::Id) -> ReadFuture<Self::Output>;
     fn write(&self, target: &Path, input: Self::Input) -> WriteFuture<Self::Id, Self::Output>;
 }
@@ -54,7 +60,14 @@ impl<T> Future for DirectoryFuture<T> {
     type Item = T;
     type Error = ();
 
+    #[inline]
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.0.poll()
     }
+}
+
+#[derive(Debug)]
+pub enum FetchState<I> {
+    Fetching(Progress),
+    Finished(I),
 }

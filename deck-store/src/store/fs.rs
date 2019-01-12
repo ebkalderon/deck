@@ -1,20 +1,23 @@
-pub use self::closure::Closure;
-
 use std::fs;
 use std::path::PathBuf;
 
 use futures::Stream;
-use hyper::Chunk;
+use hyper::{client::HttpConnector, Client};
+use hyper_tls::HttpsConnector;
 
 use self::dir::{ManifestsDir, OutputsDir, ReadFuture, SourcesDir, WriteFuture};
+// use self::fetcher::{FetchGit, Fetchable};
 use self::state::State;
-use package::{Manifest, Source};
+use super::closure::Closure;
+use crate::id::{ManifestId, OutputId, SourceId};
+use crate::package::{Manifest, Source};
 
-mod closure;
 mod dir;
 mod fetcher;
 mod file;
 mod state;
+
+pub(crate) type HttpsClient = Client<HttpsConnector<HttpConnector>>;
 
 #[derive(Debug)]
 pub struct StoreDir {
@@ -42,35 +45,31 @@ impl StoreDir {
         unimplemented!()
     }
 
-    pub fn create_output_dir(&self, package_id: String) -> WriteFuture<String, PathBuf> {
+    pub fn contains_output(&self, output_id: OutputId) -> bool {
+        let prefix = &self.prefix;
+        self.outputs.contains(prefix, &output_id)
+    }
+
+    pub fn create_output_dir(&self, package_id: String) -> WriteFuture<OutputId, PathBuf> {
         let prefix = &self.prefix;
         self.outputs.write(prefix, package_id)
     }
 
-    pub fn write_source_http<S>(&self, source: Source, stream: S) -> WriteFuture<String, PathBuf>
-    where
-        S: Stream<Item = Chunk, Error = ()> + Send + 'static,
-    {
-        let prefix = &self.prefix;
-        self.sources.write(prefix, (source, Box::new(stream)))
-    }
-
-    pub fn write_manifest(&self, manifest: String) -> WriteFuture<String, Manifest> {
+    pub fn write_manifest(&self, manifest: Manifest) -> WriteFuture<ManifestId, Manifest> {
         use self::dir::ManifestInput;
         let prefix = &self.prefix;
-        let input = ManifestInput::Text(manifest);
+        let input = ManifestInput::Constructed(manifest);
         self.manifests.write(prefix, input)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::dir::{Directory, ManifestInput, ManifestsDir};
+    use super::dir::{ManifestInput, ManifestsDir};
     use super::State;
     use super::*;
 
     use futures::{future, Future};
-    use tokio::fs::{self, File};
     use tokio::runtime::Runtime;
 
     #[test]
@@ -81,21 +80,17 @@ mod tests {
 
         let manifests = State::new(ManifestsDir);
 
-        let _read1 = manifests.read(&path, &"hello".into());
-        let _read2 = manifests.read(&path, &"hello".into());
-        let _read3 = manifests.read(&path, &"hello".into());
-        let write1 = manifests.write(
-            &path,
-            ManifestInput::Constructed(Manifest::build("hello".into()).finish()),
-        );
-        let write2 = manifests.write(
-            &path,
-            ManifestInput::Constructed(Manifest::build("hello".into()).finish()),
-        );
-        let write3 = manifests.write(
-            &path,
-            ManifestInput::Constructed(Manifest::build("hello".into()).finish()),
-        );
+        let manifest = Manifest::build("hello", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m")
+            .finish()
+            .expect("failed to create manifest");
+        let id = manifest.compute_id();
+
+        let _read1 = manifests.read(&path, &id);
+        let _read2 = manifests.read(&path, &id);
+        let _read3 = manifests.read(&path, &id);
+        let write1 = manifests.write(&path, ManifestInput::Constructed(manifest.clone()));
+        let write2 = manifests.write(&path, ManifestInput::Constructed(manifest.clone()));
+        let write3 = manifests.write(&path, ManifestInput::Constructed(manifest.clone()));
 
         let ret = runtime
             .block_on(future::join_all(vec![

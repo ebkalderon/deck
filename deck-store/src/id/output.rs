@@ -2,33 +2,64 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::ser::{Serialize, Serializer};
+
 use super::{name::Name, FilesystemId};
-use hash::Hash;
+use crate::hash::Hash;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct OutputId {
     name: Name,
+    output: Option<Name>,
     version: String,
     hash: Hash,
 }
 
 impl OutputId {
-    pub fn new(name: String, version: String, hash: Hash) -> Result<Self, ()> {
-        Ok(OutputId {
-            name: Name::new(name)?,
+    #[inline]
+    pub fn new(name: Name, output: Option<Name>, version: String, hash: Hash) -> Self {
+        OutputId {
+            name,
+            output,
             version,
             hash,
+        }
+    }
+
+    pub fn parse<T>(name: T, output: Option<T>, version: T, hash: T) -> Result<Self, ()>
+    where
+        T: AsRef<str>,
+    {
+        let output = match output {
+            Some(s) => Some(s.as_ref().parse()?),
+            None => None,
+        };
+
+        Ok(OutputId {
+            name: name.as_ref().parse()?,
+            output,
+            version: version.as_ref().to_string(),
+            hash: hash.as_ref().parse()?,
         })
     }
 
+    #[inline]
     pub fn name(&self) -> &str {
         self.name.as_str()
     }
 
+    #[inline]
+    pub fn output(&self) -> Option<&str> {
+        self.output.as_ref().map(|out| out.as_str())
+    }
+
+    #[inline]
     pub fn version(&self) -> &str {
         self.version.as_str()
     }
 
+    #[inline]
     pub fn hash(&self) -> &Hash {
         &self.hash
     }
@@ -36,7 +67,13 @@ impl OutputId {
 
 impl Display for OutputId {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        write!(fmt, "{}-{}-{}", self.name, self.version, self.hash)
+        let out = self
+            .output
+            .as_ref()
+            .map(|out| format!(":{}", out))
+            .unwrap_or("".into());
+
+        write!(fmt, "{}@{}{}-{}", self.name, self.version, out, self.hash)
     }
 }
 
@@ -56,16 +93,54 @@ impl FromStr for OutputId {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut tokens = s.rsplitn(3, '-');
-        let hash = tokens.next().ok_or(()).and_then(|s| s.parse())?;
-        let version = tokens.next().map(|s| s.to_string()).ok_or(())?;
-        let name = tokens.next().map(|s| s.to_string()).ok_or(())?;
+        let mut tokens = s.rsplitn(2, '-');
+        let hash = tokens.next().ok_or(())?;
+        let remainder = tokens.next().ok_or(())?;
 
-        if tokens.count() != 0 {
-            return Err(());
+        let mut tokens = remainder.rsplitn(2, '@');
+        let identifier = tokens.next().ok_or(())?;
+        let name = tokens.next().ok_or(())?;
+
+        let mut tokens = identifier.rsplitn(2, ':');
+        let output = tokens.next();
+        let version = tokens.next().ok_or(())?;
+
+        OutputId::parse(name, output, version, hash)
+    }
+}
+
+impl<'de> Deserialize<'de> for OutputId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OutputIdVisitor;
+
+        impl<'de> Visitor<'de> for OutputIdVisitor {
+            type Value = OutputId;
+
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                fmt.write_str("a build output ID with the form `name@version[:output]-hash`")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                OutputId::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
+            }
         }
 
-        OutputId::new(name, version, hash)
+        deserializer.deserialize_str(OutputIdVisitor)
+    }
+}
+
+impl Serialize for OutputId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -74,19 +149,18 @@ mod tests {
     use super::*;
 
     const HASH: &'static str = "fc3j3vub6kodu4jtfoakfs5xhumqi62m";
-    const EXAMPLE_ID: &'static str = "foobar-1.0.0-fc3j3vub6kodu4jtfoakfs5xhumqi62m";
+    const EXAMPLE_ID: &'static str = "foobar@1.0.0:man-fc3j3vub6kodu4jtfoakfs5xhumqi62m";
 
     #[test]
     fn is_send_and_sync() {
-        fn verify<T: Send + Sync>() {}
-        verify::<OutputId>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<OutputId>();
     }
 
     #[test]
     fn parse_from_string() {
-        let hash = HASH.parse().expect("Failed to parse hash from constant!");
-        let expected = OutputId::new("foobar".to_string(), "1.0.0".to_string(), hash)
-            .expect("Failed to init ID!");
+        let expected =
+            OutputId::parse("foobar", Some("man"), "1.0.0", HASH).expect("Failed to init ID!");
         let actual: OutputId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
         assert_eq!(expected, actual);
         assert_eq!(expected.name(), actual.name());

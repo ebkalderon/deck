@@ -2,8 +2,11 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
+use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::ser::{Serialize, Serializer};
+
 use super::FilesystemId;
-use hash::Hash;
+use crate::hash::Hash;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct SourceId {
@@ -20,10 +23,12 @@ impl SourceId {
         Ok(SourceId { name, hash })
     }
 
+    #[inline]
     pub fn name(&self) -> &str {
         self.name.as_str()
     }
 
+    #[inline]
     pub fn hash(&self) -> &Hash {
         &self.hash
     }
@@ -63,6 +68,41 @@ impl FromStr for SourceId {
     }
 }
 
+impl<'de> Deserialize<'de> for SourceId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct SourceIdVisitor;
+
+        impl<'de> Visitor<'de> for SourceIdVisitor {
+            type Value = SourceId;
+
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                fmt.write_str("a source ID with the form `name.ext-hash`")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                SourceId::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
+            }
+        }
+
+        deserializer.deserialize_str(SourceIdVisitor)
+    }
+}
+
+impl Serialize for SourceId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -72,8 +112,8 @@ mod tests {
 
     #[test]
     fn is_send_and_sync() {
-        fn verify<T: Send + Sync>() {}
-        verify::<SourceId>();
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<SourceId>();
     }
 
     #[test]
