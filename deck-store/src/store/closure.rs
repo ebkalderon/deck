@@ -8,7 +8,7 @@ use std::sync::Arc;
 use crate::id::{ManifestId, OutputId};
 use crate::package::Manifest;
 
-type Result<T> = ::std::result::Result<T, ClosureError>;
+type Result<T> = std::result::Result<T, ClosureError>;
 
 /// Self-contained dependency graph for a set of packages.
 #[derive(Clone, Debug)]
