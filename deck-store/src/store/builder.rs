@@ -258,7 +258,7 @@ impl DependenciesBuilt {
 /// This future is intentionally made `Clone` and is safe to poll from multiple threads.
 #[derive(Clone)]
 #[must_use = "futures do nothing unless polled"]
-pub(crate) struct BuildFuture(future::Shared<Box<dyn Future<Item = (), Error = ()> + Send>>);
+struct BuildFuture(future::Shared<Box<dyn Future<Item = (), Error = ()> + Send>>);
 
 impl BuildFuture {
     pub fn new<F: Future<Item = (), Error = ()> + Send + 'static>(inner: F) -> Self {

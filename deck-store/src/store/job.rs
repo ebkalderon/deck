@@ -16,7 +16,7 @@ mod fetch_source;
 pub struct JobFuture(Box<dyn Future<Item = (), Error = ()> + Send>);
 
 impl JobFuture {
-    pub(crate) fn from_stream<S>(inner: S, progress: ProgressSender) -> Self
+    fn from_stream<S>(inner: S, progress: ProgressSender) -> Self
     where
         S: Stream<Item = Progress, Error = ()> + Send + 'static,
     {

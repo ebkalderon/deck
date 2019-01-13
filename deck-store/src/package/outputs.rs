@@ -1,5 +1,5 @@
 use std::collections::BTreeSet;
-use std::fmt::{Error as FmtError, Formatter, Result as FmtResult};
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
 use serde::de::{Deserialize, Deserializer, Error as DeError, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
@@ -7,49 +7,134 @@ use serde::ser::{Serialize, SerializeSeq, Serializer};
 use crate::hash::Hash;
 use crate::id::{Name, OutputId};
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-struct Output {
-    #[serde(rename = "name")]
-    output_name: Option<Name>,
-    precomputed_hash: Hash,
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum Output {
+    Main,
+    Named(Name),
 }
 
 impl Output {
+    pub fn is_main_output(&self) -> bool {
+        *self == Output::Main
+    }
+}
+
+impl Default for Output {
+    fn default() -> Self {
+        Output::Main
+    }
+}
+
+impl Display for Output {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        match *self {
+            Output::Main => write!(fmt, ""),
+            Output::Named(ref name) => write!(fmt, "{}", name),
+        }
+    }
+}
+
+impl Into<Option<Name>> for Output {
+    fn into(self) -> Option<Name> {
+        match self {
+            Output::Main => None,
+            Output::Named(name) => Some(name),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Output {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct OutputVisitor;
+
+        impl<'de> Visitor<'de> for OutputVisitor {
+            type Value = Output;
+
+            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
+                fmt.write_str("a source ID with the form `name.ext-hash`")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: DeError,
+            {
+                if value.is_empty() {
+                    Ok(Output::Main)
+                } else {
+                    value
+                        .parse()
+                        .map_err(|_err| E::custom("failed to deserialize"))
+                        .map(|name| Output::Named(name))
+                }
+            }
+        }
+
+        deserializer.deserialize_str(OutputVisitor)
+    }
+}
+
+impl Serialize for Output {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+struct Entry {
+    #[serde(default, rename = "name")]
+    output_name: Output,
+    precomputed_hash: Hash,
+}
+
+impl Entry {
     #[inline]
-    pub fn new(name: Option<Name>, precomputed_hash: Hash) -> Self {
-        Output {
-            output_name: name,
+    pub fn new(output_name: Output, precomputed_hash: Hash) -> Self {
+        Entry {
+            output_name,
             precomputed_hash,
         }
     }
 
     #[inline]
     fn is_main_output(&self) -> bool {
-        self.output_name.is_none()
+        self.output_name.is_main_output()
     }
 
     fn to_output_id(&self, name: Name, version: String) -> OutputId {
         let output_name = self.output_name.clone();
         let precomputed_hash = self.precomputed_hash.clone();
-        OutputId::new(name, output_name, version, precomputed_hash)
+        OutputId::new(name, output_name.into(), version, precomputed_hash)
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct Outputs(BTreeSet<Output>);
+pub struct Outputs(BTreeSet<Entry>);
 
 impl Outputs {
     pub fn new(precomputed_hash: Hash) -> Self {
         let mut set = BTreeSet::new();
-        set.insert(Output::new(None, precomputed_hash));
+        set.insert(Entry::new(Output::Main, precomputed_hash));
         Outputs(set)
     }
 
     #[inline]
     pub fn append(&mut self, name: Name, precomputed_hash: Hash) {
-        let output = Output::new(Some(name), precomputed_hash);
+        let output = Entry::new(Output::Named(name), precomputed_hash);
         self.0.insert(output);
+    }
+
+    pub fn contains(&self, output_name: &Output) -> bool {
+        self.0
+            .iter()
+            .find(|out| out.output_name == *output_name)
+            .is_some()
     }
 
     pub fn iter_with(&self, name: Name, version: String) -> impl Iterator<Item = OutputId> + '_ {
@@ -77,7 +162,7 @@ impl<'de> Deserialize<'de> for Outputs {
             where
                 A: SeqAccess<'de>,
             {
-                let mut set = BTreeSet::<Output>::new();
+                let mut set = BTreeSet::<Entry>::new();
                 while let Some(output) = seq.next_element()? {
                     set.insert(output);
                 }
