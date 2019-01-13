@@ -47,7 +47,7 @@ impl Manifest {
         ManifestBuilder::new(name, version, output_hash, inputs)
     }
 
-    /// Computes the corresponding content-addressable ID of this manifest.
+    /// Computes the content-addressable ID of this manifest.
     ///
     /// # Example
     ///
