@@ -1,6 +1,7 @@
 //! Represents the `source` array table in the package manifest.
 
 use std::collections::BTreeSet;
+use std::path::PathBuf;
 
 /// External fetchable source that can be cached in the store.
 ///
@@ -8,8 +9,9 @@ use std::collections::BTreeSet;
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Source {
-    Uri { uri: String, hash: String },
     Git,
+    Path { path: PathBuf, hash: String },
+    Uri { uri: String, hash: String },
 }
 
 /// Represents the `source` array table in the package manifest.

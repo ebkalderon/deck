@@ -10,6 +10,7 @@ use tokio::fs;
 
 use super::dir::{Directory, DirectoryFuture, FetchStream, ReadFuture, WriteFuture};
 // use super::fetcher::Fetcher;
+use crate::id::FilesystemId;
 
 const TEMP_DIR_NAME: &'static str = "tmp";
 
@@ -36,7 +37,7 @@ where
     }
 
     pub fn contains(&self, prefix: &Path, id: &D::Id) -> bool {
-        let path = prefix.join(D::NAME).join(id.to_string());
+        let path = prefix.join(D::NAME).join(id.to_path());
         path.exists()
     }
 
@@ -55,7 +56,7 @@ where
             })
         });
 
-        let path = prefix.join(D::NAME).join(id.to_string());
+        let path = prefix.join(D::NAME).join(id.to_path());
         let read_data = self.directory.read(&path, &id);
         let output = block_if_writing.and_then(move |_| read_data);
 
@@ -94,7 +95,7 @@ where
             let temp_prefix = prefix.join(TEMP_DIR_NAME);
 
             mark_as_writing.and_then(move |temp_id: D::Id| {
-                let temp_path = temp_prefix.join(temp_id.to_string());
+                let temp_path = temp_prefix.join(temp_id.to_path());
                 directory
                     .write(&temp_path, input)
                     .map(|(new_id, out)| (temp_path, temp_id, new_id, out))
@@ -103,7 +104,7 @@ where
 
         let final_prefix = prefix.join(D::NAME);
         let rename_path = write_data.and_then(move |(temp_path, temp_id, new_id, out)| {
-            let final_path = final_prefix.join(new_id.to_string());
+            let final_path = final_prefix.join(new_id.to_path());
             println!("renaming {:?} -> {:?}", temp_path, final_path);
             fs::rename(temp_path, final_path)
                 .map(|_| (temp_id, new_id, out))

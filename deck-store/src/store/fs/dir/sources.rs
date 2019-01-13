@@ -22,6 +22,8 @@ impl Directory for SourcesDir {
 
     fn precompute_id(&self, input: &Self::Input) -> IdFuture<Self::Id> {
         let id = match input.0 {
+            Source::Git => unimplemented!(),
+            Source::Path { ref path, ref hash } => unimplemented!(),
             Source::Uri { ref uri, ref hash } => {
                 let file = Path::new(uri)
                     .file_name()
@@ -29,7 +31,6 @@ impl Directory for SourcesDir {
                     .unwrap_or("index.html");
                 format!("{}-{}", file, hash).parse().unwrap()
             }
-            Source::Git => unimplemented!(),
         };
 
         Box::new(future::ok(id))

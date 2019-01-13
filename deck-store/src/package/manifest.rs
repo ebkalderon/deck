@@ -36,15 +36,15 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    /// Constructs a `Manifest` with the given name, version, default output [`Hash`], and inputs.
+    /// Creates a `Manifest` with the given name, version, default output [`Hash`], and references.
     ///
     /// [`Hash`]: ../struct.Hash.html
-    pub fn build<T, U>(name: T, version: T, output_hash: T, inputs: U) -> ManifestBuilder
+    pub fn build<T, U>(name: T, version: T, default_output_hash: T, refs: U) -> ManifestBuilder
     where
         T: Into<String>,
         U: IntoIterator<Item = OutputId>,
     {
-        ManifestBuilder::new(name, version, output_hash, inputs)
+        ManifestBuilder::new(name, version, default_output_hash, refs)
     }
 
     /// Computes the content-addressable ID of this manifest.
@@ -185,10 +185,10 @@ pub struct ManifestBuilder {
 }
 
 impl ManifestBuilder {
-    /// Constructs a `Manifest` with the given name, version, default output [`Hash`], and inputs.
+    /// Creates a `Manifest` with the given name, version, default output [`Hash`], and references.
     ///
     /// [`Hash`]: ../struct.Hash.html
-    pub fn new<T, U>(name: T, version: T, default_output_hash: T, inputs: U) -> Self
+    pub fn new<T, U>(name: T, version: T, default_output_hash: T, refs: U) -> Self
     where
         T: Into<String>,
         U: IntoIterator<Item = OutputId>,
@@ -204,7 +204,7 @@ impl ManifestBuilder {
         let outputs = default_output_hash
             .into()
             .parse()
-            .map(|hash| Outputs::new(hash, inputs));
+            .map(|hash| Outputs::new(hash, refs));
 
         ManifestBuilder {
             package,
@@ -253,18 +253,18 @@ impl ManifestBuilder {
 
     /// Declares an additional build output directory produced by this manifest.
     ///
-    /// Build output directories can accept other build outputs as inputs, allowing them to be
+    /// Build output directories can accept other build outputs as refs, allowing them to be
     /// symlinked into the directory structure for runtime dependencies.
     ///
     /// By default, all manifests produce a single default output. This method allows for secondary
     /// "named" outputs to be added with supplementary content, e.g. `doc` for HTML documentation,
     /// `man` for man pages, `debug` for debug information, etc.
-    pub fn output<T>(mut self, name: Name, precomputed_hash: Hash, inputs: T) -> Self
+    pub fn output<T>(mut self, name: Name, precomputed_hash: Hash, refs: T) -> Self
     where
         T: IntoIterator<Item = OutputId>,
     {
         if let Ok(ref mut out) = self.outputs {
-            out.append(name, precomputed_hash, inputs);
+            out.append(name, precomputed_hash, refs);
         }
         self
     }
@@ -313,7 +313,7 @@ mod tests {
 
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
-        inputs = ["foo@1.2.3:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
+        references = ["foo@1.2.3:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         name = "doc"
@@ -322,7 +322,7 @@ mod tests {
         [[output]]
         name = "man"
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
-        inputs = ["m4@1.0.0:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
+        references = ["m4@1.0.0:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[source]]
         uri = "https://www.example.com/hello.tar.gz"

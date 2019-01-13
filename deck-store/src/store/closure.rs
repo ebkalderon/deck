@@ -65,7 +65,7 @@ impl Closure {
 /// 1. For this closure and all dependent closures, `target` must be contained within `packages`.
 /// 2. For all dependencies in this closure, there must be no direct cycles (however, note that
 ///    filesystem-level self-references within an output are allowed).
-/// 3. For all outputs specified in `target`, each set of inputs must correspond to exactly one
+/// 3. For all outputs specified in `target`, each set of references must correspond to exactly one
 ///    declared dependency. Undeclared references and references to build/dev dependencies are
 ///    disallowed.
 fn validate_closure(target: ManifestId, packages: &BTreeMap<ManifestId, Manifest>) -> Result<()> {

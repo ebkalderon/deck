@@ -16,8 +16,9 @@ pub struct FetchSource(Box<dyn Stream<Item = Progress, Error = ()> + Send>);
 impl FetchSource {
     pub fn new(ctx: Context, id: ManifestId, source: Source) -> Self {
         match source {
-            Source::Uri { uri, hash } => fetch_uri(ctx, id, uri, hash),
             Source::Git => fetch_git(ctx, id),
+            Source::Path { ref path, ref hash } => unimplemented!(),
+            Source::Uri { uri, hash } => fetch_uri(ctx, id, uri, hash),
         }
     }
 

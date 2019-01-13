@@ -3,7 +3,7 @@
 use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use serde::de::{Deserialize, Deserializer, Error as DeError, SeqAccess, Visitor};
+use serde::de::{self, Deserialize, Deserializer, Error as DeError, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeSeq, Serializer};
 
 use crate::hash::Hash;
@@ -14,7 +14,8 @@ use crate::id::{Name, OutputId};
 pub struct Outputs(BTreeSet<Entry>);
 
 impl Outputs {
-    /// Creates a new `Outputs` table with the default output set to the precomputed hash and inputs.
+    /// Creates a new `Outputs` table with the default output set to the given precomputed hash and
+    /// references.
     ///
     /// # What is meant by a "precomputed hash"
     ///
@@ -22,17 +23,17 @@ impl Outputs {
     /// "intensional model" within Nix and NixOS), this precomputed hash is used only to identify
     /// compatible trusted substitutes for safe sharing between untrusted users. It may be
     /// rewritten to something else after the builder has been run.
-    pub fn new<T>(precomputed_hash: Hash, inputs: T) -> Self
+    pub fn new<T>(precomputed_hash: Hash, refs: T) -> Self
     where
         T: IntoIterator<Item = OutputId>,
     {
+        let refs = refs.into_iter().collect();
         let mut set = BTreeSet::new();
-        let inputs = inputs.into_iter().collect();
-        set.insert(Entry::new(Output::Default, precomputed_hash, inputs));
+        set.insert(Entry::new(Output::Default, precomputed_hash, refs));
         Outputs(set)
     }
 
-    /// Appends a new named output with the given name, precomputed hash [`Hash`], and inputs.
+    /// Appends a new named output with the given name, precomputed hash [`Hash`], and references.
     ///
     /// # What is meant by a "precomputed hash"
     ///
@@ -41,12 +42,12 @@ impl Outputs {
     /// compatible trusted substitutes for safe sharing between untrusted users. It may be
     /// rewritten to something else after the builder has been run.
     #[inline]
-    pub fn append<T>(&mut self, name: Name, precomputed_hash: Hash, inputs: T)
+    pub fn append<T>(&mut self, name: Name, precomputed_hash: Hash, refs: T)
     where
         T: IntoIterator<Item = OutputId>,
     {
-        let inputs = inputs.into_iter().collect();
-        let output = Entry::new(Output::Named(name), precomputed_hash, inputs);
+        let refs = refs.into_iter().collect();
+        let output = Entry::new(Output::Named(name), precomputed_hash, refs);
         self.0.insert(output);
     }
 
@@ -65,36 +66,15 @@ impl<'de> Deserialize<'de> for Outputs {
     where
         D: Deserializer<'de>,
     {
-        struct OutputsVisitor;
-
-        impl<'de> Visitor<'de> for OutputsVisitor {
-            type Value = Outputs;
-
-            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                fmt.write_str("an 'output' table entry with a precomputed hash and optional name")
-            }
-
-            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
-            {
-                let mut set = BTreeSet::<Entry>::new();
-                while let Some(output) = seq.next_element()? {
-                    set.insert(output);
-                }
-
-                let num_default_outputs = set.iter().filter(|out| out.is_default_output()).count();
-                if num_default_outputs == 1 {
-                    Ok(Outputs(set))
-                } else if num_default_outputs > 1 {
-                    Err(A::Error::custom("cannot have multiple default outputs"))
-                } else {
-                    Err(A::Error::custom("missing default output"))
-                }
-            }
+        let set: BTreeSet<Entry> = Deserialize::deserialize(deserializer)?;
+        let num_default_outputs = set.iter().filter(|out| out.is_default_output()).count();
+        if num_default_outputs == 1 {
+            Ok(Outputs(set))
+        } else if num_default_outputs > 1 {
+            Err(de::Error::custom("cannot have multiple default outputs"))
+        } else {
+            Err(de::Error::custom("missing default output"))
         }
-
-        deserializer.deserialize_seq(OutputsVisitor)
     }
 }
 
@@ -103,11 +83,7 @@ impl Serialize for Outputs {
     where
         S: Serializer,
     {
-        let mut seq = serializer.serialize_seq(Some(self.0.len()))?;
-        for element in &self.0 {
-            seq.serialize_element(element)?;
-        }
-        seq.end()
+        self.0.serialize(serializer)
     }
 }
 
@@ -167,31 +143,16 @@ impl<'de> Deserialize<'de> for Output {
     where
         D: Deserializer<'de>,
     {
-        struct OutputVisitor;
+        let s: &str = Deserialize::deserialize(deserializer)?;
 
-        impl<'de> Visitor<'de> for OutputVisitor {
-            type Value = Output;
-
-            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                fmt.write_str("an output name string, e.g. \"\", \"doc\", \"lib\", or \"man\"")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: DeError,
-            {
-                if value.is_empty() {
-                    Ok(Output::Default)
-                } else {
-                    value
-                        .parse()
-                        .map_err(|_err| E::custom("failed to deserialize"))
-                        .map(|name| Output::Named(name))
-                }
-            }
+        if s.is_empty() {
+            Ok(Output::Default)
+        } else {
+            let out = s
+                .parse()
+                .map_err(|_err| de::Error::custom("failed to deserialize"))?;
+            Ok(Output::Named(out))
         }
-
-        deserializer.deserialize_str(OutputVisitor)
     }
 }
 
@@ -200,7 +161,10 @@ impl Serialize for Output {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        match *self {
+            Output::Default => None::<&str>.serialize(serializer),
+            Output::Named(_) => self.to_string().serialize(serializer),
+        }
     }
 }
 
@@ -212,17 +176,17 @@ struct Entry {
     output_name: Output,
     precomputed_hash: Hash,
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
-    inputs: BTreeSet<OutputId>,
+    references: BTreeSet<OutputId>,
 }
 
 impl Entry {
-    /// Creates a new `Entry` with the given name, precomputed hash, and inputs.
+    /// Creates a new `Entry` with the given name, precomputed hash, and references.
     #[inline]
-    pub fn new(output_name: Output, precomputed_hash: Hash, inputs: BTreeSet<OutputId>) -> Self {
+    pub fn new(output_name: Output, precomputed_hash: Hash, refs: BTreeSet<OutputId>) -> Self {
         Entry {
             output_name,
             precomputed_hash,
-            inputs,
+            references: refs,
         }
     }
 
@@ -258,7 +222,7 @@ mod tests {
     const EXAMPLE_OUTPUTS: &'static str = r#"
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
-        inputs = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
+        references = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         name = "docs"
@@ -278,7 +242,7 @@ mod tests {
     const MULTIPLE_DEFAULT_OUTPUTS: &'static str = r#"
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
-        inputs = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
+        references = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         precomputed-hash = "xpyrto6ighxc4gfhxrexzcrlcdaipars"
@@ -295,11 +259,11 @@ mod tests {
         let dummy_hash: Hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
             .parse()
             .expect("Failed to parse hash from text");
-        let dummy_input = "foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"
+        let dummy_ref = "foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"
             .parse()
             .expect("Failed to parse ID");
 
-        let mut expected = Outputs::new(dummy_hash.clone(), vec![dummy_input]);
+        let mut expected = Outputs::new(dummy_hash.clone(), vec![dummy_ref]);
         let docs_name = "docs".parse().expect("Failed to parse name 'docs'");
         expected.append(docs_name, dummy_hash.clone(), None);
         let man_name = "man".parse().expect("Failed to parse name 'man'");

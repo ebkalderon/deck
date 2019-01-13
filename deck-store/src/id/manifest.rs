@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use super::{name::Name, FilesystemId, OutputId};
@@ -119,24 +119,8 @@ impl<'de> Deserialize<'de> for ManifestId {
     where
         D: Deserializer<'de>,
     {
-        struct ManifestIdVisitor;
-
-        impl<'de> Visitor<'de> for ManifestIdVisitor {
-            type Value = ManifestId;
-
-            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                fmt.write_str("a manifest ID with the form `name-version-hash`")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                ManifestId::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
-            }
-        }
-
-        deserializer.deserialize_str(ManifestIdVisitor)
+        let s: &str = Deserialize::deserialize(deserializer)?;
+        ManifestId::from_str(&s).map_err(|_err| de::Error::custom("failed to deserialize"))
     }
 }
 
@@ -145,7 +129,7 @@ impl Serialize for ManifestId {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        self.to_string().serialize(serializer)
     }
 }
 

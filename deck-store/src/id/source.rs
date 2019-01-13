@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 
 use super::FilesystemId;
@@ -73,24 +73,8 @@ impl<'de> Deserialize<'de> for SourceId {
     where
         D: Deserializer<'de>,
     {
-        struct SourceIdVisitor;
-
-        impl<'de> Visitor<'de> for SourceIdVisitor {
-            type Value = SourceId;
-
-            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                fmt.write_str("a source ID with the form `name[.ext]-hash`")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                SourceId::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
-            }
-        }
-
-        deserializer.deserialize_str(SourceIdVisitor)
+        let s: &str = Deserialize::deserialize(deserializer)?;
+        SourceId::from_str(&s).map_err(|_err| de::Error::custom("failed to deserialize"))
     }
 }
 
@@ -99,7 +83,7 @@ impl Serialize for SourceId {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        self.to_string().serialize(serializer)
     }
 }
 

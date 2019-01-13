@@ -7,7 +7,7 @@ use serde::de::{self, Deserialize, Deserializer, Visitor};
 use serde::ser::{Serialize, Serializer};
 use url::{ParseError as UrlError, Url};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ParseError {
     NotStoreId,
     Url(UrlError),
@@ -218,24 +218,8 @@ impl<'de> Deserialize<'de> for StoreId {
     where
         D: Deserializer<'de>,
     {
-        struct StoreIdVisitor;
-
-        impl<'de> Visitor<'de> for StoreIdVisitor {
-            type Value = StoreId;
-
-            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                fmt.write_str("a store ID with the form `prefix+url`")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                StoreId::from_str(value).map_err(|err| E::custom(err.to_string()))
-            }
-        }
-
-        deserializer.deserialize_str(StoreIdVisitor)
+        let s: &str = Deserialize::deserialize(deserializer)?;
+        StoreId::from_str(&s).map_err(|err| E::custom(err.to_string()))
     }
 }
 
@@ -244,7 +228,7 @@ impl Serialize for StoreId {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        self.to_string().serialize(serializer)
     }
 }
 
