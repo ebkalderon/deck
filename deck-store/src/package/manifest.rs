@@ -280,6 +280,12 @@ impl ManifestBuilder {
         self
     }
 
+    /// Constructs and returns the new [`Manifest`].
+    ///
+    /// If the package name is empty or contains invalid characters, or if the main output hash is
+    /// invalid, then this method will return `Err`.
+    ///
+    /// [`Manifest`]: ./struct.Manifest.html
     pub fn finish(self) -> Result<Manifest, ()> {
         Ok(Manifest {
             package: self.package?,
