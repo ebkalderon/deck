@@ -5,7 +5,7 @@ use std::str::FromStr;
 use serde::de::{self, Deserialize, Deserializer, Visitor};
 use serde::ser::{Serialize, Serializer};
 
-use super::{name::Name, FilesystemId};
+use super::{name::Name, FilesystemId, ManifestId};
 use crate::hash::Hash;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -62,6 +62,12 @@ impl OutputId {
     #[inline]
     pub fn hash(&self) -> &Hash {
         &self.hash
+    }
+
+    pub fn is_same_package(&self, manifest_id: &ManifestId) -> bool {
+        let name_matches = self.name.as_str() == manifest_id.name();
+        let version_matches = self.version.as_str() == manifest_id.version();
+        name_matches && version_matches
     }
 }
 
