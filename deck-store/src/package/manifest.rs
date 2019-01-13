@@ -273,7 +273,8 @@ impl ManifestBuilder {
     ///
     /// # Laziness
     ///
-    /// Sources are only downloaded when the package is being built from source.
+    /// Sources are only downloaded when the package is being built from source. Otherwise, the
+    /// sources are essentially ignored.
     pub fn source<T>(mut self, source: Source) -> Self {
         self.sources.insert(source);
         self
