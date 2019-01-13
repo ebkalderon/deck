@@ -83,16 +83,16 @@ mod tests {
 
     #[test]
     fn parse_valid_names() {
-        Name::new("foo-bar").expect("Failed to parse valid name with hyphen!");
-        Name::new("foo_bar").expect("Failed to parse valid name with underscore!");
-        Name::new("f0-o_B4.r").expect("Failed to parse valid name with mixed chars!");
+        Name::new("foo-bar").expect("Failed to parse valid name with hyphen");
+        Name::new("foo_bar").expect("Failed to parse valid name with underscore");
+        Name::new("f0-o_B4.r").expect("Failed to parse valid name with mixed chars");
     }
 
     #[test]
     fn reject_invalid_names() {
         Name::new("foo bar").expect_err("Failed to reject name with space");
         Name::new("/foo/bar").expect_err("Failed to reject name with path-like slashes");
-        Name::new("foo!@#$%^&*(){}+?<>'\"").expect_err("Failed to reject name with special chars!");
+        Name::new("foo!@#$%^&*(){}+?<>'\"").expect_err("Failed to reject name with special chars");
     }
 
     #[test]

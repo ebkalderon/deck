@@ -1,3 +1,5 @@
+//! Reproducible package manifest data.
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
@@ -10,6 +12,7 @@ use super::sources::{Source, Sources};
 use crate::hash::Hash;
 use crate::id::{ManifestId, Name, OutputId};
 
+/// The serializable `package` table in the manifest.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 struct Package {
@@ -20,6 +23,7 @@ struct Package {
     dev_dependencies: BTreeSet<ManifestId>,
 }
 
+/// A reproducible package manifest.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
 pub struct Manifest {
     package: Package,
@@ -35,15 +39,28 @@ impl Manifest {
     /// Constructs a `Manifest` with the given name, version, main output [`Hash`], and inputs.
     ///
     /// [`Hash`]: ../struct.Hash.html
-    pub fn build<T, U>(name: T, version: T, main_output_hash: T, inputs: U) -> ManifestBuilder
+    pub fn build<T, U>(name: T, version: T, output_hash: T, inputs: U) -> ManifestBuilder
     where
         T: Into<String>,
         U: IntoIterator<Item = OutputId>,
     {
-        ManifestBuilder::new(name, version, main_output_hash, inputs)
+        ManifestBuilder::new(name, version, output_hash, inputs)
     }
 
     /// Computes the corresponding content-addressable ID of this manifest.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use deck_store::package::Manifest;
+    /// #
+    /// let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
+    ///      .finish()
+    ///      .unwrap();
+    ///
+    /// let id = manifest.compute_id();
+    /// assert_eq!(id, "foo@1.0.0-dzmdafuk7vhjrfffs2k43wtofvgtvdsh");
+    /// ```
     #[inline]
     pub fn compute_id(&self) -> ManifestId {
         let name = self.package.name.clone();
@@ -61,7 +78,7 @@ impl Manifest {
     /// ```
     /// # use deck_store::package::Manifest;
     /// #
-    /// let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m")
+    /// let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
     ///      .finish()
     ///      .unwrap();
     ///
@@ -80,7 +97,7 @@ impl Manifest {
     /// ```
     /// # use deck_store::package::Manifest;
     /// #
-    /// let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m")
+    /// let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
     ///      .finish()
     ///      .unwrap();
     ///
@@ -158,6 +175,7 @@ impl FromStr for Manifest {
     }
 }
 
+/// Builder for creating new `Manifest`s.
 #[derive(Clone, Debug)]
 pub struct ManifestBuilder {
     package: Result<Package, ()>,
@@ -206,7 +224,7 @@ impl ManifestBuilder {
 
     /// Adds a build dependency on `id`.
     ///
-    /// # Availability
+    /// # Laziness
     ///
     /// This kind of dependency is only downloaded when the package is being built from source.
     /// Otherwise, the dependency is ignored. Artifacts from build dependencies cannot be linked to
@@ -220,7 +238,7 @@ impl ManifestBuilder {
 
     /// Adds a test-only dependency on `id`.
     ///
-    /// # Availability
+    /// # Laziness
     ///
     /// This kind of dependency is only downloaded when the package is being built from source and
     /// running tests is enabled. Otherwise, the dependency is ignored. Artifacts from dev
@@ -238,12 +256,9 @@ impl ManifestBuilder {
     /// Build output directories can accept other build outputs as inputs, allowing them to be
     /// symlinked into the directory structure for runtime dependencies.
     ///
-    /// By default, all manifests produce a single [`Output::Main`]. This method allows for
-    /// secondary outputs to be added (known as [`Output::Named`]) with supplementary content, e.g.
-    /// documentation, man pages, debug info, etc.
-    ///
-    /// [`Output::Main`]: ./enum.Output.html
-    /// [`Output::Named`]: ./enum.Output.html
+    /// By default, all manifests produce a single main output. This method allows for secondary
+    /// "named" outputs to be added with supplementary content, e.g. `doc` for HTML documentation,
+    /// `man` for man pages, `debug` for debug information, etc.
     pub fn output<T>(mut self, name: Name, precomputed_hash: Hash, inputs: T) -> Self
     where
         T: IntoIterator<Item = OutputId>,
@@ -255,6 +270,10 @@ impl ManifestBuilder {
     }
 
     /// Adds an external fetchable source to this manifest.
+    ///
+    /// # Laziness
+    ///
+    /// Sources are only downloaded when the package is being built from source.
     pub fn source<T>(mut self, source: Source) -> Self {
         self.sources.insert(source);
         self
@@ -278,11 +297,8 @@ mod tests {
         [package]
         name = "hello"
         version = "1.2.3"
-        # FIXME: According to Nix, the package deps should be `ManifestId`s, and each `output`
-        # should have its own inputs (?) which are `OutputId`s. How this interacts with `output`s,
-        # I'm not sure yet.
-        dependencies = ["thing@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
-        build-dependencies = []
+        dependencies = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
+        build-dependencies = ["m4@1.0.0-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
         dev-dependencies = []
 
         [env]
@@ -290,16 +306,16 @@ mod tests {
 
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
-        inputs = ["thing@1.2.3:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
+        inputs = ["foo@1.2.3:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         name = "doc"
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
-        inputs = ["thing@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         name = "man"
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
+        inputs = ["m4@1.0.0:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[source]]
         uri = "https://www.example.com/hello.tar.gz"

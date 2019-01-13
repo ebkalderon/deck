@@ -83,6 +83,31 @@ impl FromStr for ManifestId {
     }
 }
 
+impl PartialEq<str> for ManifestId {
+    fn eq(&self, other: &str) -> bool {
+        let s = self.to_string();
+        s.as_str() == other
+    }
+}
+
+impl PartialEq<&'_ str> for ManifestId {
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<ManifestId> for str {
+    fn eq(&self, other: &ManifestId) -> bool {
+        other.to_string().as_str() == self
+    }
+}
+
+impl PartialEq<ManifestId> for &'_ str {
+    fn eq(&self, other: &ManifestId) -> bool {
+        other == self
+    }
+}
+
 impl<'de> Deserialize<'de> for ManifestId {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -133,15 +158,15 @@ mod tests {
 
     #[test]
     fn path_ends_with_toml() {
-        let id: ManifestId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
+        let id: ManifestId = EXAMPLE_ID.parse().expect("Failed to parse ID");
         let path = id.to_path();
         assert_eq!(path.extension().and_then(|s| s.to_str()), Some("toml"));
     }
 
     #[test]
     fn parse_from_string() {
-        let expected = ManifestId::parse("foobar", "1.0.0", HASH).expect("Failed to init ID!");
-        let actual: ManifestId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
+        let expected = ManifestId::parse("foobar", "1.0.0", HASH).expect("Failed to init ID");
+        let actual: ManifestId = EXAMPLE_ID.parse().expect("Failed to parse ID");
         assert_eq!(expected, actual);
         assert_eq!(expected.name(), actual.name());
         assert_eq!(expected.version(), actual.version());
@@ -150,10 +175,10 @@ mod tests {
 
     #[test]
     fn parse_roundtrip() {
-        let original: ManifestId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
+        let original: ManifestId = EXAMPLE_ID.parse().expect("Failed to parse ID");
         let text_form = original.to_string();
 
-        let parsed: ManifestId = text_form.parse().expect("Failed to parse ID from text!");
+        let parsed: ManifestId = text_form.parse().expect("Failed to parse ID from text");
         assert_eq!(original, parsed);
     }
 }

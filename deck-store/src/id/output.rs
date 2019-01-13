@@ -11,23 +11,23 @@ use crate::hash::Hash;
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct OutputId {
     name: Name,
-    output: Option<Name>,
     version: String,
+    output: Option<Name>,
     hash: Hash,
 }
 
 impl OutputId {
     #[inline]
-    pub fn new(name: Name, output: Option<Name>, version: String, hash: Hash) -> Self {
+    pub fn new(name: Name, version: String, output: Option<Name>, hash: Hash) -> Self {
         OutputId {
             name,
-            output,
             version,
+            output,
             hash,
         }
     }
 
-    pub fn parse<T>(name: T, output: Option<T>, version: T, hash: T) -> Result<Self, ()>
+    pub fn parse<T>(name: T, version: T, output: Option<T>, hash: T) -> Result<Self, ()>
     where
         T: AsRef<str>,
     {
@@ -38,8 +38,8 @@ impl OutputId {
 
         Ok(OutputId {
             name: name.as_ref().parse()?,
-            output,
             version: version.as_ref().to_string(),
+            output,
             hash: hash.as_ref().parse()?,
         })
     }
@@ -50,13 +50,13 @@ impl OutputId {
     }
 
     #[inline]
-    pub fn output(&self) -> Option<&str> {
-        self.output.as_ref().map(|out| out.as_str())
+    pub fn version(&self) -> &str {
+        self.version.as_str()
     }
 
     #[inline]
-    pub fn version(&self) -> &str {
-        self.version.as_str()
+    pub fn output(&self) -> Option<&str> {
+        self.output.as_ref().map(|out| out.as_str())
     }
 
     #[inline]
@@ -71,7 +71,7 @@ impl Display for OutputId {
             .output
             .as_ref()
             .map(|out| format!(":{}", out))
-            .unwrap_or("".into());
+            .unwrap_or_default();
 
         write!(fmt, "{}@{}{}-{}", self.name, self.version, out, self.hash)
     }
@@ -101,11 +101,36 @@ impl FromStr for OutputId {
         let identifier = tokens.next().ok_or(())?;
         let name = tokens.next().ok_or(())?;
 
-        let mut tokens = identifier.rsplitn(2, ':');
-        let output = tokens.next();
+        let mut tokens = identifier.splitn(2, ':');
         let version = tokens.next().ok_or(())?;
+        let output = tokens.next();
 
-        OutputId::parse(name, output, version, hash)
+        OutputId::parse(name, version, output, hash)
+    }
+}
+
+impl PartialEq<str> for OutputId {
+    fn eq(&self, other: &str) -> bool {
+        let s = self.to_string();
+        s.as_str() == other
+    }
+}
+
+impl PartialEq<&'_ str> for OutputId {
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<OutputId> for str {
+    fn eq(&self, other: &OutputId) -> bool {
+        other.to_string().as_str() == self
+    }
+}
+
+impl PartialEq<OutputId> for &'_ str {
+    fn eq(&self, other: &OutputId) -> bool {
+        other == self
     }
 }
 
@@ -149,7 +174,8 @@ mod tests {
     use super::*;
 
     const HASH: &'static str = "fc3j3vub6kodu4jtfoakfs5xhumqi62m";
-    const EXAMPLE_ID: &'static str = "foobar@1.0.0:man-fc3j3vub6kodu4jtfoakfs5xhumqi62m";
+    const SIMPLE_ID: &'static str = "foobar@1.0.0-fc3j3vub6kodu4jtfoakfs5xhumqi62m";
+    const WITH_OUTPUT_NAME: &'static str = "foobar@1.0.0:man-fc3j3vub6kodu4jtfoakfs5xhumqi62m";
 
     #[test]
     fn is_send_and_sync() {
@@ -158,22 +184,43 @@ mod tests {
     }
 
     #[test]
-    fn parse_from_string() {
-        let expected =
-            OutputId::parse("foobar", Some("man"), "1.0.0", HASH).expect("Failed to init ID!");
-        let actual: OutputId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
+    fn parse_simple_id_from_string() {
+        let expected = OutputId::parse("foobar", "1.0.0", None, HASH).expect("Failed to init ID");
+        let actual: OutputId = SIMPLE_ID.parse().expect("Failed to parse ID");
         assert_eq!(expected, actual);
         assert_eq!(expected.name(), actual.name());
         assert_eq!(expected.version(), actual.version());
+        assert_eq!(expected.output(), actual.output());
         assert_eq!(expected.hash(), actual.hash());
     }
 
     #[test]
-    fn parse_roundtrip() {
-        let original: OutputId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
+    fn parse_simple_roundtrip() {
+        let original: OutputId = SIMPLE_ID.parse().expect("Failed to parse ID");
         let text_form = original.to_string();
 
-        let parsed: OutputId = text_form.parse().expect("Failed to parse ID from text!");
+        let parsed: OutputId = text_form.parse().expect("Failed to parse ID from text");
+        assert_eq!(original, parsed);
+    }
+
+    #[test]
+    fn parse_id_with_name_from_string() {
+        let expected =
+            OutputId::parse("foobar", "1.0.0", Some("man"), HASH).expect("Failed to init ID");
+        let actual: OutputId = WITH_OUTPUT_NAME.parse().expect("Failed to parse ID");
+        assert_eq!(expected, actual);
+        assert_eq!(expected.name(), actual.name());
+        assert_eq!(expected.version(), actual.version());
+        assert_eq!(expected.output(), actual.output());
+        assert_eq!(expected.hash(), actual.hash());
+    }
+
+    #[test]
+    fn parse_id_with_name_roundtrip() {
+        let original: OutputId = WITH_OUTPUT_NAME.parse().expect("Failed to parse ID");
+        let text_form = original.to_string();
+
+        let parsed: OutputId = text_form.parse().expect("Failed to parse ID from text");
         assert_eq!(original, parsed);
     }
 }

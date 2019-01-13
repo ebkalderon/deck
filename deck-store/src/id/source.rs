@@ -79,7 +79,7 @@ impl<'de> Deserialize<'de> for SourceId {
             type Value = SourceId;
 
             fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                fmt.write_str("a source ID with the form `name.ext-hash`")
+                fmt.write_str("a source ID with the form `name[.ext]-hash`")
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -118,8 +118,8 @@ mod tests {
 
     #[test]
     fn parse_from_string() {
-        let hash = HASH.parse().expect("Failed to parse hash from constant!");
-        let expected = SourceId::new("foobar.json".to_string(), hash).expect("Failed to init ID!");
+        let hash = HASH.parse().expect("Failed to parse hash from constant");
+        let expected = SourceId::new("foobar.json".to_string(), hash).expect("Failed to init ID");
         let actual: SourceId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
         assert_eq!(expected, actual);
         assert_eq!(expected.name(), actual.name());
@@ -128,16 +128,16 @@ mod tests {
 
     #[test]
     fn parse_roundtrip() {
-        let original: SourceId = EXAMPLE_ID.parse().expect("Failed to parse ID!");
+        let original: SourceId = EXAMPLE_ID.parse().expect("Failed to parse ID");
         let text_form = original.to_string();
 
-        let parsed: SourceId = text_form.parse().expect("Failed to parse ID from text!");
+        let parsed: SourceId = text_form.parse().expect("Failed to parse ID from text");
         assert_eq!(original, parsed);
     }
 
     #[test]
     fn reject_empty_name() {
-        let hash = HASH.parse().expect("Failed to parse hash from constant!");
+        let hash = HASH.parse().expect("Failed to parse hash from constant");
         SourceId::new("".to_string(), hash).expect_err("Failed to reject empty name");
     }
 }
