@@ -91,14 +91,17 @@ struct Entry {
     #[serde(default, rename = "name")]
     output_name: Output,
     precomputed_hash: Hash,
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    inputs: BTreeSet<OutputId>,
 }
 
 impl Entry {
     #[inline]
-    pub fn new(output_name: Output, precomputed_hash: Hash) -> Self {
+    pub fn new(output_name: Output, precomputed_hash: Hash, inputs: BTreeSet<OutputId>) -> Self {
         Entry {
             output_name,
             precomputed_hash,
+            inputs,
         }
     }
 
@@ -118,15 +121,23 @@ impl Entry {
 pub struct Outputs(BTreeSet<Entry>);
 
 impl Outputs {
-    pub fn new(precomputed_hash: Hash) -> Self {
+    pub fn new<T>(precomputed_hash: Hash, inputs: T) -> Self
+    where
+        T: IntoIterator<Item = OutputId>,
+    {
         let mut set = BTreeSet::new();
-        set.insert(Entry::new(Output::Main, precomputed_hash));
+        let inputs = inputs.into_iter().collect();
+        set.insert(Entry::new(Output::Main, precomputed_hash, inputs));
         Outputs(set)
     }
 
     #[inline]
-    pub fn append(&mut self, name: Name, precomputed_hash: Hash) {
-        let output = Entry::new(Output::Named(name), precomputed_hash);
+    pub fn append<T>(&mut self, name: Name, precomputed_hash: Hash, inputs: T)
+    where
+        T: IntoIterator<Item = OutputId>,
+    {
+        let inputs = inputs.into_iter().collect();
+        let output = Entry::new(Output::Named(name), precomputed_hash, inputs);
         self.0.insert(output);
     }
 
@@ -210,6 +221,7 @@ mod tests {
     const EXAMPLE_OUTPUTS: &'static str = r#"
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
+        inputs = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         name = "docs"
@@ -229,6 +241,7 @@ mod tests {
     const MULTIPLE_MAIN_OUTPUTS: &'static str = r#"
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
+        inputs = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         precomputed-hash = "xpyrto6ighxc4gfhxrexzcrlcdaipars"
@@ -245,12 +258,15 @@ mod tests {
         let dummy_hash: Hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
             .parse()
             .expect("Failed to parse hash from text");
+        let dummy_input = "foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"
+            .parse()
+            .expect("Failed to parse ID");
 
-        let mut expected = Outputs::new(dummy_hash.clone());
+        let mut expected = Outputs::new(dummy_hash.clone(), vec![dummy_input]);
         let docs_name = "docs".parse().expect("Failed to parse name 'docs'");
-        expected.append(docs_name, dummy_hash.clone());
+        expected.append(docs_name, dummy_hash.clone(), None);
         let man_name = "man".parse().expect("Failed to parse name 'man'");
-        expected.append(man_name, dummy_hash.clone());
+        expected.append(man_name, dummy_hash.clone(), None);
 
         assert_eq!(actual, expected);
     }

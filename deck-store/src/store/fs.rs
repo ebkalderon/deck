@@ -1,5 +1,4 @@
 use std::fs;
-// use std::iter::IntoIterator;
 use std::path::PathBuf;
 
 use futures::Stream;
@@ -81,7 +80,7 @@ mod tests {
 
         let manifests = State::new(ManifestsDir);
 
-        let manifest = Manifest::build("hello", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m")
+        let manifest = Manifest::build("hello", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
             .finish()
             .expect("failed to create manifest");
         let id = manifest.compute_id();

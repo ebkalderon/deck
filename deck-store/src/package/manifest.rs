@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use toml::de::Error as DeserializeError;
 
-use super::outputs::{Output, Outputs};
+use super::outputs::Outputs;
 use super::sources::{Source, Sources};
 use crate::hash::Hash;
 use crate::id::{ManifestId, Name, OutputId};
@@ -32,11 +32,15 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    /// Builds a new `Manifest` with the given name, version, and main output [`Hash`].
+    /// Constructs a `Manifest` with the given name, version, main output [`Hash`], and inputs.
     ///
     /// [`Hash`]: ../struct.Hash.html
-    pub fn build<T: Into<String>>(name: T, version: T, main_output_hash: T) -> ManifestBuilder {
-        ManifestBuilder::new(name, version, main_output_hash)
+    pub fn build<T, U>(name: T, version: T, main_output_hash: T, inputs: U) -> ManifestBuilder
+    where
+        T: Into<String>,
+        U: IntoIterator<Item = OutputId>,
+    {
+        ManifestBuilder::new(name, version, main_output_hash, inputs)
     }
 
     /// Computes the corresponding content-addressable ID of this manifest.
@@ -51,12 +55,38 @@ impl Manifest {
     /// Returns the name of the package.
     ///
     /// This string is guaranteed not to be empty.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use deck_store::package::Manifest;
+    /// #
+    /// let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m")
+    ///      .finish()
+    ///      .unwrap();
+    ///
+    /// let name = manifest.name();
+    /// assert_eq!(name, "foo");
+    /// ```
     #[inline]
     pub fn name(&self) -> &str {
         self.package.name.as_str()
     }
 
     /// Returns the semantic version of the package.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use deck_store::package::Manifest;
+    /// #
+    /// let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m")
+    ///      .finish()
+    ///      .unwrap();
+    ///
+    /// let version = manifest.version();
+    /// assert_eq!(version, "1.0.0");
+    /// ```
     #[inline]
     pub fn version(&self) -> &str {
         &self.package.version
@@ -92,8 +122,8 @@ impl Manifest {
     ///
     /// # Note
     ///
-    /// Every package is guaranteed to produce at least one [`Output::Main`] output and zero or more
-    /// [`Output::Named`] outputs.
+    /// Every package is guaranteed to produce at least one main output and zero or more additional
+    /// outputs. When a manifest is built from source, all outputs are built together.
     #[inline]
     pub fn outputs(&self) -> impl Iterator<Item = OutputId> + '_ {
         let name = self.package.name.clone();
@@ -137,7 +167,14 @@ pub struct ManifestBuilder {
 }
 
 impl ManifestBuilder {
-    pub fn new<T: Into<String>>(name: T, version: T, main_output_hash: T) -> Self {
+    /// Constructs a `Manifest` with the given name, version, main output [`Hash`], and inputs.
+    ///
+    /// [`Hash`]: ../struct.Hash.html
+    pub fn new<T, U>(name: T, version: T, main_output_hash: T, inputs: U) -> Self
+    where
+        T: Into<String>,
+        U: IntoIterator<Item = OutputId>,
+    {
         let package = name.into().parse().map(|name| Package {
             name,
             version: version.into(),
@@ -149,7 +186,7 @@ impl ManifestBuilder {
         let outputs = main_output_hash
             .into()
             .parse()
-            .map(|hash| Outputs::new(hash));
+            .map(|hash| Outputs::new(hash, inputs));
 
         ManifestBuilder {
             package,
@@ -159,6 +196,7 @@ impl ManifestBuilder {
         }
     }
 
+    /// Adds a runtime dependency on `id`.
     pub fn dependency(mut self, id: ManifestId) -> Self {
         if let Ok(ref mut p) = self.package {
             p.dependencies.insert(id);
@@ -166,6 +204,13 @@ impl ManifestBuilder {
         self
     }
 
+    /// Adds a build dependency on `id`.
+    ///
+    /// # Availability
+    ///
+    /// This kind of dependency is only downloaded when the package is being built from source.
+    /// Otherwise, the dependency is ignored. Artifacts from build dependencies cannot be linked to
+    /// at runtime.
     pub fn build_dependency(mut self, id: ManifestId) -> Self {
         if let Ok(ref mut p) = self.package {
             p.build_dependencies.insert(id);
@@ -173,6 +218,14 @@ impl ManifestBuilder {
         self
     }
 
+    /// Adds a test-only dependency on `id`.
+    ///
+    /// # Availability
+    ///
+    /// This kind of dependency is only downloaded when the package is being built from source and
+    /// running tests is enabled. Otherwise, the dependency is ignored. Artifacts from dev
+    /// dependencies cannot be linked to at runtime, and they are never included in the final
+    /// output.
     pub fn dev_dependency(mut self, id: ManifestId) -> Self {
         if let Ok(ref mut p) = self.package {
             p.dev_dependencies.insert(id);
@@ -180,33 +233,38 @@ impl ManifestBuilder {
         self
     }
 
-    pub fn output(mut self, name: Name, hash: Hash) -> Self {
+    /// Declares an additional build output directory produced by this manifest.
+    ///
+    /// Build output directories can accept other build outputs as inputs, allowing them to be
+    /// symlinked into the directory structure for runtime dependencies.
+    ///
+    /// By default, all manifests produce a single [`Output::Main`]. This method allows for
+    /// secondary outputs to be added (known as [`Output::Named`]) with supplementary content, e.g.
+    /// documentation, man pages, debug info, etc.
+    ///
+    /// [`Output::Main`]: ./enum.Output.html
+    /// [`Output::Named`]: ./enum.Output.html
+    pub fn output<T>(mut self, name: Name, precomputed_hash: Hash, inputs: T) -> Self
+    where
+        T: IntoIterator<Item = OutputId>,
+    {
         if let Ok(ref mut out) = self.outputs {
-            out.append(name, hash);
+            out.append(name, precomputed_hash, inputs);
         }
         self
     }
 
-    pub fn source<T>(mut self, source: Source, target_outputs: T) -> Self
-    where
-        T: IntoIterator<Item = Output>,
-    {
-        let outputs = target_outputs.into_iter().collect();
-        self.sources.insert(source, outputs);
+    /// Adds an external fetchable source to this manifest.
+    pub fn source<T>(mut self, source: Source) -> Self {
+        self.sources.insert(source);
         self
     }
 
     pub fn finish(self) -> Result<Manifest, ()> {
-        let outputs = self.outputs?;
-
-        if !self.sources.all_valid_outputs(&outputs) {
-            return Err(());
-        }
-
         Ok(Manifest {
             package: self.package?,
             env: self.env,
-            outputs,
+            outputs: self.outputs?,
             sources: self.sources,
         })
     }
@@ -232,10 +290,12 @@ mod tests {
 
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
+        inputs = ["thing@1.2.3:bin-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         name = "doc"
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
+        inputs = ["thing@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
 
         [[output]]
         name = "man"
@@ -244,7 +304,6 @@ mod tests {
         [[source]]
         uri = "https://www.example.com/hello.tar.gz"
         hash = "1234567890abcdef"
-        target-outputs = ["", "doc", "man"]
     "#;
 
     #[test]
