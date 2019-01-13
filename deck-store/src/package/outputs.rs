@@ -14,7 +14,7 @@ use crate::id::{Name, OutputId};
 pub struct Outputs(BTreeSet<Entry>);
 
 impl Outputs {
-    /// Creates a new `Outputs` table with the main output set to the precomputed hash and inputs.
+    /// Creates a new `Outputs` table with the default output set to the precomputed hash and inputs.
     ///
     /// # What is meant by a "precomputed hash"
     ///
@@ -28,7 +28,7 @@ impl Outputs {
     {
         let mut set = BTreeSet::new();
         let inputs = inputs.into_iter().collect();
-        set.insert(Entry::new(Output::Main, precomputed_hash, inputs));
+        set.insert(Entry::new(Output::Default, precomputed_hash, inputs));
         Outputs(set)
     }
 
@@ -83,13 +83,13 @@ impl<'de> Deserialize<'de> for Outputs {
                     set.insert(output);
                 }
 
-                let num_main_outputs = set.iter().filter(|out| out.is_main_output()).count();
-                if num_main_outputs == 1 {
+                let num_default_outputs = set.iter().filter(|out| out.is_default_output()).count();
+                if num_default_outputs == 1 {
                     Ok(Outputs(set))
-                } else if num_main_outputs > 1 {
-                    Err(A::Error::custom("cannot have multiple main outputs"))
+                } else if num_default_outputs > 1 {
+                    Err(A::Error::custom("cannot have multiple default outputs"))
                 } else {
-                    Err(A::Error::custom("missing main output"))
+                    Err(A::Error::custom("missing default output"))
                 }
             }
         }
@@ -114,40 +114,40 @@ impl Serialize for Outputs {
 /// Types of build outputs that a manifest can have.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 enum Output {
-    /// The unnamed main output.
+    /// The unnamed default output.
     ///
     /// Contains the actual application/library being installed. When a package is installed by a
     /// user, this is likely what they are looking for. Manifests are required to have one and only
-    /// one main output.
-    Main,
+    /// one default output.
+    Default,
     /// An optional "named" output.
     ///
     /// Contains extra components or artifacts not typically included in a base installation. For
     /// example, the `doc` named output could contain rendered HTML documentation, the `man` named
     /// output could contain man pages, the `debug` named output could contain debugging symbols,
-    /// etc. Users can request to install these add-on outputs on top of the main output.
+    /// etc. Users can request to install these add-on outputs on top of the default output.
     Named(Name),
 }
 
 impl Output {
-    /// Returns whether this output is an [`Output::Main`].
+    /// Returns whether this output is an [`Output::Default`].
     ///
-    /// [`Output::Main`]: ./struct.Output.html#variant.Main
-    pub fn is_main_output(&self) -> bool {
-        *self == Output::Main
+    /// [`Output::Default`]: ./struct.Output.html#variant.Default
+    pub fn is_default_output(&self) -> bool {
+        *self == Output::Default
     }
 }
 
 impl Default for Output {
     fn default() -> Self {
-        Output::Main
+        Output::Default
     }
 }
 
 impl Display for Output {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         match *self {
-            Output::Main => write!(fmt, ""),
+            Output::Default => write!(fmt, ""),
             Output::Named(ref name) => write!(fmt, "{}", name),
         }
     }
@@ -156,7 +156,7 @@ impl Display for Output {
 impl Into<Option<Name>> for Output {
     fn into(self) -> Option<Name> {
         match self {
-            Output::Main => None,
+            Output::Default => None,
             Output::Named(name) => Some(name),
         }
     }
@@ -181,7 +181,7 @@ impl<'de> Deserialize<'de> for Output {
                 E: DeError,
             {
                 if value.is_empty() {
-                    Ok(Output::Main)
+                    Ok(Output::Default)
                 } else {
                     value
                         .parse()
@@ -226,12 +226,12 @@ impl Entry {
         }
     }
 
-    /// Returns whether this output entry is an [`Output::Main`].
+    /// Returns whether this output entry is an [`Output::Default`].
     ///
-    /// [`Output::Main`]: ./struct.Output.html#variant.Main
+    /// [`Output::Default`]: ./struct.Output.html#variant.Default
     #[inline]
-    fn is_main_output(&self) -> bool {
-        self.output_name.is_main_output()
+    fn is_default_output(&self) -> bool {
+        self.output_name.is_default_output()
     }
 
     /// Renders this entry as an `OutputId` using the given name and version information.
@@ -269,13 +269,13 @@ mod tests {
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
     "#;
 
-    const MISSING_MAIN_OUTPUT: &'static str = r#"
+    const MISSING_DEFAULT_OUTPUT: &'static str = r#"
         [[output]]
         name = "foo"
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
     "#;
 
-    const MULTIPLE_MAIN_OUTPUTS: &'static str = r#"
+    const MULTIPLE_DEFAULT_OUTPUTS: &'static str = r#"
         [[output]]
         precomputed-hash = "fc3j3vub6kodu4jtfoakfs5xhumqi62m"
         inputs = ["foo@1.2.3-fc3j3vub6kodu4jtfoakfs5xhumqi62m"]
@@ -309,14 +309,14 @@ mod tests {
     }
 
     #[test]
-    fn rejects_missing_main_output() {
-        de::from_str::<Container>(MISSING_MAIN_OUTPUT)
-            .expect_err("Failed to reject `Outputs` missing main outputs");
+    fn rejects_missing_default_output() {
+        de::from_str::<Container>(MISSING_DEFAULT_OUTPUT)
+            .expect_err("Failed to reject `Outputs` missing default outputs");
     }
 
     #[test]
-    fn rejects_multiple_main_outputs() {
-        de::from_str::<Container>(MULTIPLE_MAIN_OUTPUTS)
-            .expect_err("Failed to reject `Outputs` with multiple main outputs");
+    fn rejects_multiple_default_outputs() {
+        de::from_str::<Container>(MULTIPLE_DEFAULT_OUTPUTS)
+            .expect_err("Failed to reject `Outputs` with multiple default outputs");
     }
 }

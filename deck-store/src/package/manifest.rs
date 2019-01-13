@@ -36,7 +36,7 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    /// Constructs a `Manifest` with the given name, version, main output [`Hash`], and inputs.
+    /// Constructs a `Manifest` with the given name, version, default output [`Hash`], and inputs.
     ///
     /// [`Hash`]: ../struct.Hash.html
     pub fn build<T, U>(name: T, version: T, output_hash: T, inputs: U) -> ManifestBuilder
@@ -139,7 +139,7 @@ impl Manifest {
     ///
     /// # Note
     ///
-    /// Every package is guaranteed to produce at least one main output and zero or more additional
+    /// Every package is guaranteed to produce at least one default output and zero or more additional
     /// outputs. When a manifest is built from source, all outputs are built together.
     #[inline]
     pub fn outputs(&self) -> impl Iterator<Item = OutputId> + '_ {
@@ -185,10 +185,10 @@ pub struct ManifestBuilder {
 }
 
 impl ManifestBuilder {
-    /// Constructs a `Manifest` with the given name, version, main output [`Hash`], and inputs.
+    /// Constructs a `Manifest` with the given name, version, default output [`Hash`], and inputs.
     ///
     /// [`Hash`]: ../struct.Hash.html
-    pub fn new<T, U>(name: T, version: T, main_output_hash: T, inputs: U) -> Self
+    pub fn new<T, U>(name: T, version: T, default_output_hash: T, inputs: U) -> Self
     where
         T: Into<String>,
         U: IntoIterator<Item = OutputId>,
@@ -201,7 +201,7 @@ impl ManifestBuilder {
             dev_dependencies: BTreeSet::new(),
         });
 
-        let outputs = main_output_hash
+        let outputs = default_output_hash
             .into()
             .parse()
             .map(|hash| Outputs::new(hash, inputs));
@@ -256,7 +256,7 @@ impl ManifestBuilder {
     /// Build output directories can accept other build outputs as inputs, allowing them to be
     /// symlinked into the directory structure for runtime dependencies.
     ///
-    /// By default, all manifests produce a single main output. This method allows for secondary
+    /// By default, all manifests produce a single default output. This method allows for secondary
     /// "named" outputs to be added with supplementary content, e.g. `doc` for HTML documentation,
     /// `man` for man pages, `debug` for debug information, etc.
     pub fn output<T>(mut self, name: Name, precomputed_hash: Hash, inputs: T) -> Self
@@ -282,8 +282,8 @@ impl ManifestBuilder {
 
     /// Constructs and returns the new [`Manifest`].
     ///
-    /// If the package name is empty or contains invalid characters, or if the main output hash is
-    /// invalid, then this method will return `Err`.
+    /// If the package name is empty or contains invalid characters, or if the default output hash
+    /// is invalid, then this method will return `Err`.
     ///
     /// [`Manifest`]: ./struct.Manifest.html
     pub fn finish(self) -> Result<Manifest, ()> {
