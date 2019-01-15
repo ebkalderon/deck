@@ -159,3 +159,11 @@ let build_baz = future::join_all(vec![build_foo, build_bar, download_baz(hyper)]
 
 runtime.block_on(build_baz).unwrap();
 ```
+
+## Caching results
+
+* In any of the `download` steps, if the input already exists, insert a job
+  which immediately returns that the input has been memoized.
+
+* In any of the `build` steps, if the output already exists on disk, insert a
+  job which immediately returns that the output has been memoized.

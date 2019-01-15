@@ -239,12 +239,3 @@ Source               | "\<multihash-of-source\>:\<file-name\>"
 Derivation manifest  | "\<multihash-of-file\>:\<file-name\>"
 Temp local build dir | "\<randomly-generated-hash\>:\<build-user-name\>"
 Derivation output    | "\<multihash-of-
-
-### Building derivations
-
-* Have the `Store::build_derivation()` method take a `Manifest` and return a
-  `Result<BuildLog, Error>`. The manifest must have already been added to the
-  store (meaning its `StoreId` is known, and therefore its unique hash is known)
-  and this will be enforced at compile time.
-* Check whether the 
-* Spawn a worker process (or subprocess?) which 
