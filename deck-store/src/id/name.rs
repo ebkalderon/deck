@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
-use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde::de::{self, Deserialize, Deserializer};
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Name(String);
@@ -35,24 +35,8 @@ impl<'de> Deserialize<'de> for Name {
     where
         D: Deserializer<'de>,
     {
-        struct NameVisitor;
-
-        impl<'de> Visitor<'de> for NameVisitor {
-            type Value = Name;
-
-            fn expecting(&self, fmt: &mut Formatter) -> FmtResult {
-                fmt.write_str("a non-empty string")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Name::from_str(value).map_err(|_err| E::custom("failed to deserialize"))
-            }
-        }
-
-        deserializer.deserialize_str(NameVisitor)
+        let s: &str = Deserialize::deserialize(deserializer)?;
+        Name::from_str(&s).map_err(|_err| de::Error::custom("failed to deserialize"))
     }
 }
 
