@@ -41,7 +41,7 @@ impl Manifest {
     /// [`Hash`]: ../struct.Hash.html
     pub fn build<T, U>(name: T, version: T, default_output_hash: T, refs: U) -> ManifestBuilder
     where
-        T: Into<String>,
+        T: AsRef<str>,
         U: IntoIterator<Item = OutputId>,
     {
         ManifestBuilder::new(name, version, default_output_hash, refs)
@@ -190,19 +190,19 @@ impl ManifestBuilder {
     /// [`Hash`]: ../struct.Hash.html
     pub fn new<T, U>(name: T, version: T, default_output_hash: T, refs: U) -> Self
     where
-        T: Into<String>,
+        T: AsRef<str>,
         U: IntoIterator<Item = OutputId>,
     {
-        let package = name.into().parse().map(|name| Package {
+        let package = name.as_ref().parse().map(|name| Package {
             name,
-            version: version.into(),
+            version: version.as_ref().into(),
             dependencies: BTreeSet::new(),
             build_dependencies: BTreeSet::new(),
             dev_dependencies: BTreeSet::new(),
         });
 
         let outputs = default_output_hash
-            .into()
+            .as_ref()
             .parse()
             .map(|hash| Outputs::new(hash, refs));
 
