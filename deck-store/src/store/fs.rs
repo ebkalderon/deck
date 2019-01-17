@@ -45,9 +45,14 @@ impl StoreDir {
         unimplemented!()
     }
 
-    pub fn contains_output(&self, id: OutputId) -> bool {
+    pub fn has_manifest(&self, id: &ManifestId) -> bool {
         let prefix = &self.prefix;
-        self.outputs.contains(prefix, &id)
+        self.manifests.contains(prefix, id)
+    }
+
+    pub fn has_output(&self, id: &OutputId) -> bool {
+        let prefix = &self.prefix;
+        self.outputs.contains(prefix, id)
     }
 
     pub fn create_output_dir(&self, package_id: String) -> WriteFuture<OutputId, PathBuf> {
