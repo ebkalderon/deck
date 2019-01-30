@@ -59,7 +59,7 @@ impl Manifest {
     ///      .unwrap();
     ///
     /// let id = manifest.compute_id();
-    /// assert_eq!(id, "foo@1.0.0-dzmdafuk7vhjrfffs2k43wtofvgtvdsh");
+    /// assert_eq!(id, "foo@1.0.0-eokoquyu2zwn33oqzpkix5d3ckswyejx");
     /// ```
     #[inline]
     pub fn compute_id(&self) -> ManifestId {

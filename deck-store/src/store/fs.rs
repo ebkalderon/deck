@@ -5,8 +5,7 @@ use futures::Stream;
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 
-use self::dir::{ManifestsDir, OutputsDir, ReadFuture, SourcesDir, WriteFuture};
-// use self::fetcher::{FetchGit, Fetchable};
+use self::dir::{ManifestsDir, OutputsDir, SourcesDir};
 use self::state::State;
 use super::closure::Closure;
 use crate::id::{ManifestId, OutputId, SourceId};
@@ -41,75 +40,50 @@ impl StoreDir {
         })
     }
 
-    pub fn compute_closure(&self, _package_id: String) -> ReadFuture<Closure> {
+    pub async fn compute_closure(&self, _id: ManifestId) -> Option<Closure> {
         unimplemented!()
     }
 
-    pub fn contains_output(&self, id: OutputId) -> bool {
+    pub fn contains_output(&self, id: &OutputId) -> bool {
         let prefix = &self.prefix;
-        self.outputs.contains(prefix, &id)
+        self.outputs.contains(prefix, id)
     }
 
-    pub fn create_output_dir(&self, package_id: String) -> WriteFuture<OutputId, PathBuf> {
+    pub async fn write_manifest(&self, manifest: Manifest) -> Result<Manifest, ()> {
+        use self::dir::ManifestsInput;
         let prefix = &self.prefix;
-        self.outputs.write(prefix, package_id)
-    }
-
-    pub fn write_manifest(&self, manifest: Manifest) -> WriteFuture<ManifestId, Manifest> {
-        use self::dir::ManifestInput;
-        let prefix = &self.prefix;
-        let input = ManifestInput::Constructed(manifest);
-        self.manifests.write(prefix, input)
+        let input = ManifestsInput::Manifest(manifest);
+        let (_, out) = await!(self.manifests.write(prefix, input))?;
+        Ok(out)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::dir::{ManifestInput, ManifestsDir};
-    use super::State;
     use super::*;
 
-    use futures::{future, Future};
-    use tokio::runtime::Runtime;
+    use futures_preview::future::{FutureExt, TryFutureExt};
+    use futures::Future;
+    use tokio::runtime::current_thread::block_on_all;
 
+    #[ignore]
     #[test]
     fn create_manifest() {
-        let mut runtime = Runtime::new().unwrap();
         let path = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/store"));
         println!("{:?}", path);
 
-        let manifests = State::new(ManifestsDir);
-
+        let store = StoreDir::open(path).unwrap();
         let manifest = Manifest::build("hello", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
             .finish()
             .expect("failed to create manifest");
-        let id = manifest.compute_id();
 
-        let _read1 = manifests.read(&path, &id);
-        let _read2 = manifests.read(&path, &id);
-        let _read3 = manifests.read(&path, &id);
-        let write1 = manifests.write(&path, ManifestInput::Constructed(manifest.clone()));
-        let write2 = manifests.write(&path, ManifestInput::Constructed(manifest.clone()));
-        let write3 = manifests.write(&path, ManifestInput::Constructed(manifest.clone()));
-
-        let ret = runtime
-            .block_on(future::join_all(vec![
-                Box::new(write2.map_err(|_| ()).map(|_| ()))
-                    as Box<dyn Future<Item = _, Error = _> + Send>,
-                Box::new(write3.map_err(|_| ()).map(|_| ()))
-                    as Box<dyn Future<Item = _, Error = _> + Send>,
-                // Box::new(read3.map_err(|_| ()).map(|_| ()))
-                //     as Box<dyn Future<Item = _, Error = _> + Send>,
-                Box::new(write1.map_err(|_| ()).map(|_| ()))
-                    as Box<dyn Future<Item = _, Error = _> + Send>,
-                // Box::new(read1.map_err(|_| ()).map(|_| ()))
-                //     as Box<dyn Future<Item = _, Error = _> + Send>,
-                // Box::new(read2.map_err(|_| ()).map(|_| ()))
-                //     as Box<dyn Future<Item = _, Error = _> + Send>,
-            ]))
-            .unwrap();
-
-        println!("finished: {:?}", ret);
-        runtime.shutdown_on_idle().wait().unwrap();
+        // FIXME: `tokio::fs` requires a `tokio` executor, but `StoreDir` produces a non-`'static`
+        // future which `tokio` cannot execute. `tokio::current_thread::block_on_all()` can execute
+        // them, but it panics on `tokio::fs::File` because the entire `tokio-fs` crate doesn't
+        // work with `current_thread` and requires a `tokio`-specific threadpool with
+        // `::blocking()`. This test will be ignored for now. See this for details:
+        // https://github.com/tokio-rs/tokio/issues/386
+        let write1 = store.write_manifest(manifest.clone()).boxed().compat();
+        block_on_all(write1).unwrap();
     }
 }
