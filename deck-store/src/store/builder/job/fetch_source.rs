@@ -1,4 +1,3 @@
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::pin::Pin;
 use std::task::{LocalWaker, Poll};
 
@@ -26,14 +25,6 @@ impl FetchSource {
 
     fn from_stream<S: Stream<Item = Result<Progress, ()>> + Send + 'static>(inner: S) -> Self {
         FetchSource(Box::pin(inner))
-    }
-}
-
-impl Debug for FetchSource {
-    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        fmt.debug_tuple(stringify!(FetchSource))
-            .field(&"Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>")
-            .finish()
     }
 }
 

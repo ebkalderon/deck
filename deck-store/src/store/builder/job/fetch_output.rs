@@ -1,4 +1,3 @@
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::pin::Pin;
 use std::task::{LocalWaker, Poll};
 
@@ -14,14 +13,6 @@ pub struct FetchOutput(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>)
 impl FetchOutput {
     pub fn new(ctx: Context, id: ManifestId) -> Self {
         unimplemented!()
-    }
-}
-
-impl Debug for FetchOutput {
-    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        fmt.debug_tuple(stringify!(FetchSource))
-            .field(&"Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>")
-            .finish()
     }
 }
 

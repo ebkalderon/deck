@@ -1,4 +1,3 @@
-use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{LocalWaker, Poll};
@@ -45,14 +44,6 @@ impl BuildManifest {
         ]);
 
         BuildManifest(Box::pin(stream))
-    }
-}
-
-impl Debug for BuildManifest {
-    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        fmt.debug_tuple(stringify!(BuildManifest))
-            .field(&"Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>")
-            .finish()
     }
 }
 

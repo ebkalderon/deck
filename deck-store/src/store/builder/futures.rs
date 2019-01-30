@@ -36,14 +36,6 @@ impl JobFuture {
     }
 }
 
-impl Debug for JobFuture {
-    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        fmt.debug_tuple(stringify!(JobFuture))
-            .field(&"Pin<Box<dyn Future<Output = ()> + Send>>")
-            .finish()
-    }
-}
-
 impl Future for JobFuture {
     type Output = ();
 
@@ -150,7 +142,6 @@ impl Stream for BuildStream {
 }
 
 /// Internal state of the builder.
-#[derive(Debug)]
 pub struct BuilderState {
     /// Shared context with access to the store and fetchers.
     pub context: Context,
