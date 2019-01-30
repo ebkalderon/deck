@@ -106,7 +106,7 @@ impl BuildStream {
     ///
     /// Requires a `BuildFuture` which represents the entire build graph and the receiving half of
     /// the `ProgressReceiver` used to report progress.
-    pub(crate) fn new<F>(future: F, rx: ProgressReceiver) -> Self
+    pub(super) fn new<F>(future: F, rx: ProgressReceiver) -> Self
     where
         F: Future<Output = Result<BuildFuture, ()>> + Send + 'static
     {
