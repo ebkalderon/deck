@@ -12,7 +12,7 @@ use super::dir::{Directory, DirectoryFuture, FetchStream, ReadFuture, WriteFutur
 // use super::fetcher::Fetcher;
 use crate::id::FilesystemId;
 
-const TEMP_DIR_NAME: &'static str = "tmp";
+const TEMP_DIR_NAME: &str = "tmp";
 
 type WriteQueue<I> = Arc<RwLock<HashMap<I, BlockingFuture<I>>>>;
 

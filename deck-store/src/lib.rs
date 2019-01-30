@@ -1,3 +1,4 @@
+#![feature(async_await, await_macro, futures_api)]
 #![forbid(unsafe_code)]
 
 #[macro_use]

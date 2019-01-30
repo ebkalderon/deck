@@ -1,16 +1,20 @@
 use std::fmt::{Debug, Formatter, Result as FmtResult};
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{LocalWaker, Poll};
 use std::time::{Duration, Instant};
 
 use chrono::Utc;
-use futures::{future, stream, Future, Poll, Stream};
+use futures_preview::compat::Future01CompatExt;
+use futures_preview::future::{self, FutureExt, TryFutureExt};
+use futures_preview::stream::{self, Stream};
 
-use super::super::context::Context;
-use super::super::progress::{Building, BuildingStatus, Finished, FinishedStatus, Progress};
-use super::IntoJob;
 use crate::package::Manifest;
+use crate::store::context::Context;
+use crate::store::progress::{Building, BuildingStatus, Finished, FinishedStatus, Progress};
 
 #[must_use = "streams do nothing unless polled"]
-pub struct BuildManifest(Box<dyn Stream<Item = Progress, Error = ()> + Send>);
+pub struct BuildManifest(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>);
 
 impl BuildManifest {
     pub fn new(_ctx: Context, manifest: Manifest) -> Self {
@@ -36,30 +40,26 @@ impl BuildManifest {
         let delay = tokio::timer::Delay::new(when);
 
         let stream = stream::futures_ordered(vec![
-            Box::new(future::ok(building)) as Box<dyn Future<Item = _, Error = _> + Send>,
-            Box::new(delay.map(move |_| finished).map_err(|_| ()))
-                as Box<dyn Future<Item = _, Error = _> + Send>,
+            Box::pin(future::ok(building)) as Pin<Box<dyn Future<Output = _> + Send>>,
+            Box::pin(delay.compat().then(|_| future::ok(finished))) as Pin<Box<dyn Future<Output = _> + Send>>,
         ]);
 
-        BuildManifest(Box::new(stream))
+        BuildManifest(Box::pin(stream))
     }
 }
 
 impl Debug for BuildManifest {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         fmt.debug_tuple(stringify!(BuildManifest))
-            .field(&"Box<dyn Stream<Item = Progress, Error = ()> + Send>")
+            .field(&"Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>")
             .finish()
     }
 }
 
-impl IntoJob for BuildManifest {}
-
 impl Stream for BuildManifest {
-    type Item = Progress;
-    type Error = ();
+    type Item = Result<Progress, ()>;
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.0.poll()
+    fn poll_next(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Option<Self::Item>> {
+        self.0.as_mut().poll_next(lw)
     }
 }

@@ -1,5 +1,5 @@
 use chrono::{offset::Utc, DateTime};
-use futures::sync::mpsc::{self, Receiver, Sender};
+use futures_preview::channel::mpsc::{self, Receiver, Sender};
 
 use crate::id::ManifestId;
 
@@ -12,6 +12,7 @@ pub(crate) fn progress_channel(buffer: usize) -> (ProgressSender, ProgressReceiv
 
 #[derive(Clone, Debug)]
 pub enum Progress {
+    Started,
     Downloading(Downloading),
     Blocked { package_id: ManifestId },
     Building(Building),
