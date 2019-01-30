@@ -100,8 +100,8 @@ impl Builder {
         }
     }
 
-    /// Same as `Builder::new()`, except it lets you specify a pre-populated `BuildGraph` and
-    /// progress channels.
+    /// Same as `Builder::new()`, except it lets you specify a pre-populated `BuildGraph` and a
+    /// progress channel.
     ///
     /// This constructor is only called internally, used when recursively building dependencies.
     #[inline]
