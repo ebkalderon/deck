@@ -1,12 +1,12 @@
 //! Filesystem-level file locking for Tokio.
 
 use std::fmt::{Debug, Formatter, Result as FmtResult};
-use std::fs::File as StdFile;
+use std::fs::{File as StdFile, Metadata};
 use std::ops::{Deref, DerefMut};
 
 use fs2::FileExt;
 use futures::{Async, Future, Poll};
-use tokio::fs::File;
+use tokio::fs::{file, File};
 use tokio::io::Error as IoError;
 
 /// Trait adding file locking functionality to `tokio::File`.
@@ -49,6 +49,12 @@ impl LockedFile {
     #[inline]
     fn new(file: File) -> Self {
         LockedFile(Some(file))
+    }
+
+    /// Queries metadata about the underlying file.
+    #[inline]
+    pub fn metadata(self) -> MetadataFuture {
+        MetadataFuture::new(self)
     }
 }
 
@@ -157,5 +163,34 @@ impl Debug for State {
             State::Blocking(ref inner) => debug.field(inner).finish(),
             State::Locked => debug.finish(),
         }
+    }
+}
+
+#[derive(Debug)]
+#[must_use = "futures do nothing unless polled"]
+pub struct MetadataFuture {
+    inner: file::MetadataFuture,
+    wrapper: Option<LockedFile>,
+}
+
+impl MetadataFuture {
+    pub(super) fn new(mut file: LockedFile) -> Self {
+        let std = file.0.take().expect("`LockedFile` must be initialized");
+        MetadataFuture {
+            inner: std.metadata(),
+            wrapper: Some(file),
+        }
+    }
+}
+
+impl Future for MetadataFuture {
+    type Item = (LockedFile, Metadata);
+    type Error = IoError;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        let (file, metadata) = try_ready!(self.inner.poll());
+        let mut locked = self.wrapper.take().expect("inner `LockedFile` was empty");
+        locked.0 = Some(file);
+        Ok(Async::Ready((locked, metadata)))
     }
 }

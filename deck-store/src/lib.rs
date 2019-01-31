@@ -1,4 +1,5 @@
 #![feature(async_await, await_macro, futures_api)]
+#![feature(const_str_as_bytes)]
 #![forbid(unsafe_code)]
 
 #[macro_use]

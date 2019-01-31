@@ -40,7 +40,8 @@ impl BuildManifest {
 
         let stream = stream::futures_ordered(vec![
             Box::pin(future::ok(building)) as Pin<Box<dyn Future<Output = _> + Send>>,
-            Box::pin(delay.compat().then(|_| future::ok(finished))) as Pin<Box<dyn Future<Output = _> + Send>>,
+            Box::pin(delay.compat().then(|_| future::ok(finished)))
+                as Pin<Box<dyn Future<Output = _> + Send>>,
         ]);
 
         BuildManifest(Box::pin(stream))

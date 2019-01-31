@@ -5,8 +5,8 @@ pub use self::fetch_source::FetchSource;
 use std::future::Future;
 use std::pin::Pin;
 
-use futures_preview::stream::{self, Stream};
 use futures_preview::future::{self, FutureExt, TryFutureExt};
+use futures_preview::stream::{self, Stream};
 
 use super::futures::JobFuture;
 use crate::id::ManifestId;
@@ -29,9 +29,11 @@ where
     fn into_job(self, tx: ProgressSender) -> JobFuture {
         let stream = self
             .map_ok(|stream| Box::pin(stream) as Pin<Box<dyn Stream<Item = _> + Send>>)
-            .unwrap_or_else(|err| Box::pin(stream::once(future::err(err))) as Pin<Box<dyn Stream<Item = _> + Send>>)
+            .unwrap_or_else(|err| {
+                Box::pin(stream::once(future::err(err))) as Pin<Box<dyn Stream<Item = _> + Send>>
+            })
             .flatten_stream();
- 
+
         JobFuture::new(stream, tx)
     }
 }

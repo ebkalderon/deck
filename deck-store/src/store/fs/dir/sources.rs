@@ -1,11 +1,9 @@
-use std::future::Future;
-use std::path::{Path, PathBuf};
-use std::pin::Pin;
+use std::path::PathBuf;
 
+use futures_preview::future::{self, FutureExt};
 use futures_preview::StreamExt;
-use futures_preview::future::{self, FutureExt, Ready};
 
-use super::Directory;
+use super::{DirFuture, Directory, ReadPath, WritePath};
 use crate::hash::Hash;
 use crate::id::SourceId;
 use crate::package::Source;
@@ -24,17 +22,12 @@ impl Directory for SourcesDir {
     type Input = SourceInput;
     type Output = PathBuf;
 
-    type IdFuture = Pin<Box<dyn Future<Output = Result<Self::Id, ()>> + Send>>;
-    type ReadFuture = Ready<Result<Option<Self::Output>, ()>>;
-    type WriteFuture = Pin<Box<dyn Future<Output = Result<Self::Output, ()>> + Send>>;
-
     const NAME: &'static str = "sources";
 
-    fn precompute_id(&self, input: &Self::Input) -> Self::IdFuture {
-        let input = input.clone();
+    fn precompute_id<'a>(&'a self, input: &'a Self::Input) -> DirFuture<'a, Self::Id> {
         let future = async move {
             match input {
-                SourceInput::Path(ref src, _) => unimplemented!(),
+                SourceInput::Path(_, _) => unimplemented!(),
                 SourceInput::Text(ref name, ref text) => {
                     let hash = Hash::compute().input(&text).finish();
                     let id = SourceId::new(name.clone(), hash)?;
@@ -46,19 +39,23 @@ impl Directory for SourcesDir {
         future.boxed()
     }
 
-    fn compute_id(&self, _target: &Path) -> Self::IdFuture {
+    fn compute_id<'a>(&'a self, _path: &'a ReadPath) -> DirFuture<'a, Self::Id> {
         unimplemented!()
     }
 
-    fn read(&self, target: &Path, _: &Self::Id) -> Self::ReadFuture {
-        if target.exists() {
-            future::ok(Some(target.to_owned()))
+    fn read<'a>(&'a self, path: &'a ReadPath) -> DirFuture<'a, Option<Self::Output>> {
+        if path.exists() {
+            future::ok(Some(path.as_path().to_owned())).boxed()
         } else {
-            future::ok(None)
+            future::ok(None).boxed()
         }
     }
 
-    fn write(&self, target: &Path, input: Self::Input) -> Self::WriteFuture {
+    fn write<'a>(
+        &'a self,
+        _path: &'a mut WritePath,
+        _input: Self::Input,
+    ) -> DirFuture<'a, Self::Output> {
         unimplemented!()
     }
 }

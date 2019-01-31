@@ -54,11 +54,15 @@ fn fetch_uri(ctx: Context, id: ManifestId, uri: String, _hash: String) -> FetchS
             source: uri,
         };
 
-        let downloading = response.into_body().compat().map_err(|_| ()).map_ok(move |chunk| {
-            progress.downloaded_bytes += chunk.len() as u64;
-            Progress::Downloading(progress.clone())
-        });
-        
+        let downloading = response
+            .into_body()
+            .compat()
+            .map_err(|_| ())
+            .map_ok(move |chunk| {
+                progress.downloaded_bytes += chunk.len() as u64;
+                Progress::Downloading(progress.clone())
+            });
+
         let progress = Progress::Blocked { package_id: id };
         let done = downloading.chain(stream::once(future::ok(progress)));
         Ok(done)
@@ -73,5 +77,7 @@ fn fetch_uri(ctx: Context, id: ManifestId, uri: String, _hash: String) -> FetchS
 }
 
 fn fetch_git(_ctx: Context, id: ManifestId) -> FetchSource {
-    FetchSource::from_stream(stream::once(future::ok(Progress::Blocked { package_id: id })))
+    FetchSource::from_stream(stream::once(future::ok(Progress::Blocked {
+        package_id: id,
+    })))
 }

@@ -127,9 +127,10 @@ impl Builder {
         let future = async {
             // TODO: Implementation needed.
             // let manifest = await!(context.store.load_manifest(&manifest_id))?;
-            let manifest = Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
-                 .finish()
-                 .unwrap();
+            let manifest =
+                Manifest::build("foo", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
+                    .finish()
+                    .unwrap();
 
             Ok(BuilderState {
                 context,
@@ -218,11 +219,15 @@ impl MaybeSubstituted {
                     let target = builder.manifest_id.clone();
                     let source = src.clone();
                     let progress = builder.progress.clone();
-                    jobs.push(future::ok(FetchSource::new(context, target, source)).into_job(progress));
+                    jobs.push(
+                        future::ok(FetchSource::new(context, target, source)).into_job(progress),
+                    );
                 }
 
                 let download_sources = BuildFuture::join_all(jobs);
-                builder.dependencies.reserve(builder.manifest.dependencies().count() + 1);
+                builder
+                    .dependencies
+                    .reserve(builder.manifest.dependencies().count() + 1);
                 builder.dependencies.push(download_sources);
             }
 

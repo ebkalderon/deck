@@ -4,14 +4,14 @@ use std::pin::Pin;
 use std::task::{LocalWaker, Poll};
 
 use futures_preview::future::{self, FutureExt, TryFutureExt};
-use futures_preview::stream::{Stream, StreamExt};
 use futures_preview::sink::SinkExt;
+use futures_preview::stream::{Stream, StreamExt};
 
 use super::BuildGraph;
 use crate::id::ManifestId;
 use crate::package::Manifest;
-use crate::store::progress::{Progress, ProgressReceiver, ProgressSender};
 use crate::store::context::Context;
+use crate::store::progress::{Progress, ProgressReceiver, ProgressSender};
 
 /// Executes a discrete unit of work during the build process.
 ///
@@ -74,7 +74,10 @@ impl BuildFuture {
     }
 
     /// Creates a new `BuildFuture` which waits for `deps` to complete before executing `next`.
-    pub fn join_all_and_then<I: IntoIterator<Item = BuildFuture>>(deps: I, next: JobFuture) -> Self {
+    pub fn join_all_and_then<I: IntoIterator<Item = BuildFuture>>(
+        deps: I,
+        next: JobFuture,
+    ) -> Self {
         let joined = future::join_all(deps).then(|_| next);
         let future: Box<dyn Future<Output = _> + Send> = Box::new(joined);
         BuildFuture(Pin::from(future).shared())
@@ -108,7 +111,7 @@ impl BuildStream {
     /// the `ProgressReceiver` used to report progress.
     pub(super) fn new<F>(future: F, rx: ProgressReceiver) -> Self
     where
-        F: Future<Output = Result<BuildFuture, ()>> + Send + 'static
+        F: Future<Output = Result<BuildFuture, ()>> + Send + 'static,
     {
         let build_started = async move {
             match await!(future) {

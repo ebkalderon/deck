@@ -1,8 +1,6 @@
-use std::future::Future;
-use std::path::{Path, PathBuf};
-use std::pin::Pin;
+use std::path::PathBuf;
 
-use super::Directory;
+use super::{DirFuture, Directory, ReadPath, WritePath};
 
 use crate::id::OutputId;
 
@@ -14,25 +12,25 @@ impl Directory for OutputsDir {
     type Input = PathBuf;
     type Output = PathBuf;
 
-    type IdFuture = Pin<Box<dyn Future<Output = Result<Self::Id, ()>> + Send>>;
-    type ReadFuture = Pin<Box<dyn Future<Output = Result<Option<Self::Output>, ()>> + Send>>;
-    type WriteFuture = Pin<Box<dyn Future<Output = Result<Self::Output, ()>> + Send>>;
-
     const NAME: &'static str = "outputs";
 
-    fn precompute_id(&self, _input: &Self::Input) -> Self::IdFuture {
+    fn precompute_id<'a>(&'a self, _input: &'a Self::Input) -> DirFuture<'a, Self::Id> {
         unimplemented!()
     }
 
-    fn compute_id(&self, _target: &Path) -> Self::IdFuture {
+    fn compute_id<'a>(&'a self, _path: &'a ReadPath) -> DirFuture<'a, Self::Id> {
         unimplemented!()
     }
 
-    fn read(&self, _target: &Path, _id: &Self::Id) -> Self::ReadFuture {
+    fn read<'a>(&'a self, _path: &'a ReadPath) -> DirFuture<'a, Option<Self::Output>> {
         unimplemented!()
     }
 
-    fn write(&self, _target: &Path, _input: Self::Input) -> Self::WriteFuture {
+    fn write<'a>(
+        &'a self,
+        _path: &'a mut WritePath,
+        _input: Self::Input,
+    ) -> DirFuture<'a, Self::Output> {
         unimplemented!()
     }
 }

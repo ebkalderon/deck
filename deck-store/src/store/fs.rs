@@ -16,6 +16,9 @@ mod fetcher;
 mod file;
 mod state;
 
+const TEMP_DIR_NAME: &str = "tmp";
+const VAR_DIR_NAME: &str = "var";
+
 pub(crate) type HttpsClient = Client<HttpsConnector<HttpConnector>>;
 
 #[derive(Debug)]
@@ -63,10 +66,8 @@ mod tests {
     use super::*;
 
     use futures_preview::future::{FutureExt, TryFutureExt};
-    use futures::Future;
     use tokio::runtime::current_thread::block_on_all;
 
-    #[ignore]
     #[test]
     fn create_manifest() {
         let path = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/store"));
@@ -83,7 +84,7 @@ mod tests {
         // work with `current_thread` and requires a `tokio`-specific threadpool with
         // `::blocking()`. This test will be ignored for now. See this for details:
         // https://github.com/tokio-rs/tokio/issues/386
-        let write1 = store.write_manifest(manifest.clone()).boxed().compat();
+        let write1 = store.write_manifest(manifest).boxed().compat();
         block_on_all(write1).unwrap();
     }
 }
