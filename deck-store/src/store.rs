@@ -6,8 +6,10 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::binary_cache::BinaryCache;
+use crate::id::ManifestId;
 use crate::package::Manifest;
 use crate::platform::Platform;
+use crate::repo::Repository;
 
 pub mod builder;
 pub mod progress;
@@ -43,8 +45,10 @@ pub enum Repair {
 
 pub trait Store: Debug {
     fn supported_platforms<'a>(&'a self) -> StoreFuture<'a, Vec<Platform>>;
-    fn build_package(&mut self, manifest: Manifest) -> BuildStream;
     fn add_binary_cache<'a, B: BinaryCache>(&'a mut self, cache: B) -> StoreFuture<'a, ()>;
     fn add_remote_store<'a, S: Store>(&'a mut self, store: S) -> StoreFuture<'a, ()>;
+    fn add_repository<'a, R: Repository>(&'a mut self, repo: R) -> StoreFuture<'a, ()>;
+    fn build_manifest(&mut self, manifest: Manifest) -> BuildStream;
+    fn get_build_log<'a>(&'a mut self, id: &'a ManifestId) -> StoreFuture<'a, Option<String>>;
     fn verify<'a>(&'a mut self, check: CheckContents, repair: Repair) -> StoreFuture<'a, ()>;
 }

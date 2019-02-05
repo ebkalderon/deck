@@ -17,6 +17,7 @@ pub use crate::id::{ManifestId, OutputId, SourceId};
 pub mod binary_cache;
 pub mod package;
 pub mod platform;
+pub mod repo;
 pub mod store;
 
 mod hash;

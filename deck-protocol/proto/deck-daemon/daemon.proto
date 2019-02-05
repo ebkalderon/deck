@@ -10,7 +10,7 @@ import "deck-core/core.proto";
 // Example
 service Daemon {
     // Example
-    rpc BuildPackage(deck.core.Manifest) returns (deck.core.BuildResult);
+    rpc BuildPackage(deck.core.Manifest) returns (stream deck.core.BuildResult);
     // Example
     rpc GetBuildLog(deck.core.BuildLogRequest) returns (deck.core.BuildLogResponse);
 }
