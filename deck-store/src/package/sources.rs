@@ -3,6 +3,8 @@
 use std::collections::BTreeSet;
 use std::path::PathBuf;
 
+use serde::{Deserialize, Serialize};
+
 /// External fetchable source that can be cached in the store.
 ///
 /// TODO: Change to `Uri` once https://github.com/hyperium/http/pull/274 gets merged.

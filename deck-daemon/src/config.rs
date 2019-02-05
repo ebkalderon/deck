@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Config {

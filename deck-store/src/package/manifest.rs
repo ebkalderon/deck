@@ -6,6 +6,7 @@ use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
 use toml::de::Error as DeserializeError;
+use serde::{Deserialize, Serialize};
 
 use super::outputs::Outputs;
 use super::sources::{Source, Sources};
@@ -59,7 +60,7 @@ impl Manifest {
     ///      .unwrap();
     ///
     /// let id = manifest.compute_id();
-    /// assert_eq!(id, "foo@1.0.0-dzmdafuk7vhjrfffs2k43wtofvgtvdsh");
+    /// assert_eq!(id, "foo@1.0.0-eokoquyu2zwn33oqzpkix5d3ckswyejx");
     /// ```
     #[inline]
     pub fn compute_id(&self) -> ManifestId {

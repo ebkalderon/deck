@@ -45,7 +45,7 @@ impl Debug for Hash {
     fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
         let encoded = BASE32_NOPAD.encode(&self.0);
         fmt.debug_tuple(stringify!(Hash))
-            .field(&format!("{}", encoded.to_lowercase()))
+            .field(&encoded.to_lowercase().to_string())
             .finish()
     }
 }

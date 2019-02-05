@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
 use serde::de::{self, Deserialize, Deserializer};
+use serde::Serialize;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Name(String);

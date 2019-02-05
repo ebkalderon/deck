@@ -16,13 +16,24 @@ pub mod remote;
 mod closure;
 mod context;
 mod fs;
-mod job;
 
 pub type PlatformFuture = Box<dyn Future<Item = Vec<Platform>, Error = ()>>;
 
 pub type AddedFuture = Box<dyn Future<Item = (), Error = ()>>;
 
 pub type VerifyFuture = Box<dyn Future<Item = (), Error = ()>>;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum CheckContents {
+    Enabled,
+    Disabled,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Repair {
+    Enabled,
+    Disabled,
+}
 
 pub trait Store: Debug {
     fn supported_platforms(&self) -> PlatformFuture;
@@ -33,5 +44,5 @@ pub trait Store: Debug {
 
     fn add_remote_store<S: Store>(&mut self, store: S) -> AddedFuture;
 
-    fn verify(&mut self, repair: bool) -> VerifyFuture;
+    fn verify(&mut self, check: CheckContents, repair: Repair) -> VerifyFuture;
 }

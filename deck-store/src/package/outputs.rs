@@ -3,8 +3,9 @@
 use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use serde::de::{self, Deserialize, Deserializer, Error as DeError, SeqAccess, Visitor};
-use serde::ser::{Serialize, SerializeSeq, Serializer};
+use serde::de::{Deserializer, Error as DeError};
+use serde::ser::Serializer;
+use serde::{Deserialize, Serialize};
 
 use crate::hash::Hash;
 use crate::id::{Name, OutputId};
@@ -68,12 +69,13 @@ impl<'de> Deserialize<'de> for Outputs {
     {
         let set: BTreeSet<Entry> = Deserialize::deserialize(deserializer)?;
         let num_default_outputs = set.iter().filter(|out| out.is_default_output()).count();
+
         if num_default_outputs == 1 {
             Ok(Outputs(set))
         } else if num_default_outputs > 1 {
-            Err(de::Error::custom("cannot have multiple default outputs"))
+            Err(DeError::custom("cannot have multiple default outputs"))
         } else {
-            Err(de::Error::custom("missing default output"))
+            Err(DeError::custom("missing default output"))
         }
     }
 }
@@ -150,7 +152,7 @@ impl<'de> Deserialize<'de> for Output {
         } else {
             let out = s
                 .parse()
-                .map_err(|_err| de::Error::custom("failed to deserialize"))?;
+                .map_err(|_err| DeError::custom("failed to deserialize"))?;
             Ok(Output::Named(out))
         }
     }
@@ -202,7 +204,7 @@ impl Entry {
     #[inline]
     fn to_output_id(&self, name: Name, version: String) -> OutputId {
         let output_name = self.output_name.clone();
-        let precomputed_hash = self.precomputed_hash.clone();
+        let precomputed_hash = self.precomputed_hash;
         OutputId::new(name, version, output_name.into(), precomputed_hash)
     }
 }

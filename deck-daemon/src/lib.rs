@@ -1,10 +1,7 @@
 //! Deck daemon implementation.
 
-#![forbid(unsafe_code)]
 #![deny(missing_debug_implementations)]
-
-#[macro_use]
-extern crate serde;
+#![forbid(unsafe_code)]
 
 use crate::config::Config;
 
