@@ -1,9 +1,5 @@
 #![forbid(unsafe_code)]
 
-extern crate deck_client;
-#[macro_use]
-extern crate structopt;
-
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]

@@ -1,17 +1,11 @@
+#![deny(missing_debug_implementations)]
 #![feature(async_await, await_macro, futures_api)]
 #![feature(const_str_as_bytes)]
 #![forbid(unsafe_code)]
 
-#[macro_use]
-extern crate futures;
-#[macro_use]
-extern crate serde;
-
 #[cfg(feature = "local")]
-#[macro_use]
 extern crate diesel;
 #[cfg(feature = "local")]
-#[macro_use]
 extern crate diesel_migrations;
 
 #[cfg(feature = "s3")]

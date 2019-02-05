@@ -1,7 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
 
-use futures::Stream;
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 

@@ -3,8 +3,9 @@
 use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use serde::de::{Deserialize, Deserializer, Error as DeError};
-use serde::ser::{Serialize, Serializer};
+use serde::de::{Deserializer, Error as DeError};
+use serde::ser::Serializer;
+use serde::{Deserialize, Serialize};
 
 use crate::hash::Hash;
 use crate::id::{Name, OutputId};
