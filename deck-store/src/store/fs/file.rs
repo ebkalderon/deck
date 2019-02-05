@@ -5,7 +5,7 @@ use std::fs::{File as StdFile, Metadata};
 use std::ops::{Deref, DerefMut};
 
 use fs2::FileExt;
-use futures::{Async, Future, Poll, try_ready};
+use futures::{try_ready, Async, Future, Poll};
 use tokio::fs::{file, File};
 use tokio::io::Error as IoError;
 

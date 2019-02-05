@@ -22,17 +22,17 @@ pub struct JobFuture(Pin<Box<dyn Future<Output = ()> + Send>>);
 
 impl JobFuture {
     /// Creates a new `JobFuture` that forwards the `progress` stream to the given `ProgressSender`.
-    pub fn new<S>(progress: S, tx: ProgressSender) -> Self
+    pub fn new<S>(mut progress: S, mut tx: ProgressSender) -> Self
     where
-        S: Stream<Item = Result<Progress, ()>> + Send + 'static,
+        S: Stream<Item = Result<Progress, ()>> + Send + Unpin + 'static,
     {
-        let future = progress
-            .map(Ok)
-            .forward(tx.sink_map_err(|_| ()))
-            .map(|_| ())
-            .boxed();
+        let future = async move {
+            await!(tx
+                .send_all(&mut progress)
+                .unwrap_or_else(|_| eprintln!("send error")));
+        };
 
-        JobFuture(future)
+        JobFuture(future.boxed())
     }
 }
 

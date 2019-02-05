@@ -5,8 +5,8 @@ use std::ffi::OsString;
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
 use std::str::FromStr;
 
-use toml::de::Error as DeserializeError;
 use serde::{Deserialize, Serialize};
+use toml::de::Error as DeserializeError;
 
 use super::outputs::Outputs;
 use super::sources::{Source, Sources};

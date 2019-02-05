@@ -24,7 +24,7 @@ pub trait IntoJob {
 impl<S, F> IntoJob for F
 where
     S: Stream<Item = Result<Progress, ()>> + Send + 'static,
-    F: Future<Output = Result<S, ()>> + Send + 'static,
+    F: Future<Output = Result<S, ()>> + Send + Unpin + 'static,
 {
     fn into_job(self, tx: ProgressSender) -> JobFuture {
         let stream = self
