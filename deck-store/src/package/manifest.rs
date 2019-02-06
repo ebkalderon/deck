@@ -130,10 +130,8 @@ impl Manifest {
 
     /// Iterates over the package builder's environment variables as key-value pairs.
     #[inline]
-    pub fn env(&self) -> impl Iterator<Item = (OsString, OsString)> + '_ {
-        self.env
-            .iter()
-            .map(|(k, v)| (OsString::from(k), OsString::from(v)))
+    pub fn env(&self) -> impl Iterator<Item = (&String, &String)> + '_ {
+        self.env.iter()
     }
 
     /// Iterates over the package's build outputs.
