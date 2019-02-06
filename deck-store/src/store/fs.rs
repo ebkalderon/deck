@@ -59,31 +59,3 @@ impl StoreDir {
         Ok(out)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use futures_preview::future::{FutureExt, TryFutureExt};
-    use tokio::runtime::current_thread::block_on_all;
-
-    #[test]
-    fn create_manifest() {
-        let path = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/store"));
-        println!("{:?}", path);
-
-        let store = StoreDir::open(path).unwrap();
-        let manifest = Manifest::build("hello", "1.0.0", "fc3j3vub6kodu4jtfoakfs5xhumqi62m", None)
-            .finish()
-            .expect("failed to create manifest");
-
-        // FIXME: `tokio::fs` requires a `tokio` executor, but `StoreDir` produces a non-`'static`
-        // future which `tokio` cannot execute. `tokio::current_thread::block_on_all()` can execute
-        // them, but it panics on `tokio::fs::File` because the entire `tokio-fs` crate doesn't
-        // work with `current_thread` and requires a `tokio`-specific threadpool with
-        // `::blocking()`. This test will be ignored for now. See this for details:
-        // https://github.com/tokio-rs/tokio/issues/386
-        let write1 = store.write_manifest(manifest).boxed().compat();
-        block_on_all(write1).unwrap();
-    }
-}

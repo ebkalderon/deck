@@ -12,12 +12,12 @@ use crate::platform::Platform;
 use crate::repo::Repository;
 
 pub mod builder;
+pub mod fs;
 pub mod progress;
 pub mod remote;
 
 mod closure;
 mod context;
-mod fs;
 
 // NOTE: All this noise has been to work fine with a simple `async fn`, with no need for associated
 // types, this type alias, or `Pin<Box<_>>`. Replace _immediately_ once `async fn` in traits is
@@ -26,7 +26,7 @@ mod fs;
 pub type StoreFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, ()>> + Send + 'a>>;
 
 /// Sets whether the hashes of the store contents should be recomputed and verified.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CheckContents {
     /// Each item in the store should have its hash recomputed and verified.
     Enabled,
@@ -35,7 +35,7 @@ pub enum CheckContents {
 }
 
 /// Sets whether store inconsistencies should be repaired.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Repair {
     /// Missing paths should be registered and inconsistent hashes should be recomputed.
     Enabled,

@@ -6,7 +6,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use futures_preview::future::{self, FutureExt, TryFutureExt};
-use futures_preview::stream::{self, Stream};
+use futures_preview::stream::{self, Stream, StreamExt};
 
 use super::futures::JobFuture;
 use crate::id::ManifestId;

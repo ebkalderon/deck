@@ -53,6 +53,7 @@ where
 
         match locked {
             LockedPath::ReadExisting(path) => {
+                println!("already in store");
                 let output = await!(self.directory.read(&path))?;
                 Ok((temp_id, output.unwrap()))
             }
