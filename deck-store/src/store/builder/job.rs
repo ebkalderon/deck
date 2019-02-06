@@ -24,7 +24,7 @@ pub trait IntoJob {
 impl<S, F> IntoJob for F
 where
     S: Stream<Item = Result<Progress, ()>> + Send + 'static,
-    F: Future<Output = Result<S, ()>> + Send + Unpin + 'static,
+    F: Future<Output = Result<S, ()>> + Send + 'static,
 {
     fn into_job(self, tx: ProgressSender) -> JobFuture {
         let stream = self
@@ -32,7 +32,8 @@ where
             .unwrap_or_else(|err| {
                 Box::pin(stream::once(future::err(err))) as Pin<Box<dyn Stream<Item = _> + Send>>
             })
-            .flatten_stream();
+            .flatten_stream()
+            .boxed();
 
         JobFuture::new(stream, tx)
     }
