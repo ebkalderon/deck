@@ -28,14 +28,13 @@ pub struct DirectoryPath<I> {
 }
 
 impl<I: FilesystemId> DirectoryPath<I> {
-    pub fn new<P: Into<PathBuf>, S: Into<String>>(prefix: P, directory: S, id: I) -> Self {
-        let prefix = prefix.into();
-        let mut lock_path = prefix.join(VAR_DIR_NAME).join(id.to_path());
+    pub fn new<P: AsRef<Path>, S: Into<String>>(prefix: P, directory: S, id: I) -> Self {
+        let mut lock_path = prefix.as_ref().join(VAR_DIR_NAME).join(id.to_path());
         lock_path.set_extension(LOCK_FILE_EXT);
 
         DirectoryPath {
-            root: prefix.join(directory.into()).join(id.to_path()),
-            temp_path: prefix.join(TEMP_DIR_NAME).join(id.to_path()),
+            root: prefix.as_ref().join(directory.into()).join(id.to_path()),
+            temp_path: prefix.as_ref().join(TEMP_DIR_NAME).join(id.to_path()),
             lock_path,
             id,
         }

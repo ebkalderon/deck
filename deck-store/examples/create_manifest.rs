@@ -25,6 +25,11 @@ fn main() {
     // See this issue for details: https://github.com/tokio-rs/tokio/issues/386
     //
     // `lazy_static!` was the only way I was able to get this test working.
-    let write1 = STORE.write_manifest(manifest).map_ok(|_| ()).boxed().compat();
+    let write1 = STORE
+        .write_manifest(manifest)
+        .map_ok(|_| ())
+        .boxed()
+        .compat();
+
     tokio::run(write1);
 }
