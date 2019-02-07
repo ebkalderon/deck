@@ -2,6 +2,8 @@
 name = "deck-daemon"
 version = "0.1.0"
 authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+description = "Daemon for managing the global Deck store in multi-user mode"
+license = "MIT OR Apache-2.0"
 edition = "2018"
 
 [dependencies]
@@ -11,9 +13,16 @@ serde = { version = "1.0", features = ["derive"] }
 tokio = "0.1"
 toml = "0.4"
 
+[dependencies.deck-binary-cache]
+path = "../deck-binary-cache"
+features = ["local", "s3", "ssh"]
+
 [dependencies.deck-protocol]
 path = "../deck-protocol"
 
 [dependencies.deck-store]
 path = "../deck-store"
-features = ["local"]
+features = ["local", "ssh"]
+
+[dependencies.deck-repository]
+path = "../deck-repository"

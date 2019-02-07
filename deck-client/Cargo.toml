@@ -2,17 +2,26 @@
 name = "deck-client"
 version = "0.1.0"
 authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+description = "High-level abstraction for Deck command-line tools"
+license = "MIT OR Apache-2.0"
 edition = "2018"
 
-[features]
-default = ["deck-store/local"]
-multi-user-mode = ["deck-protocol/daemon"]
+[dependencies.deck-binary-cache]
+path = "../deck-binary-cache"
+features = ["local", "s3", "ssh"]
 
 [dependencies.deck-protocol]
 path = "../deck-protocol"
 default-features = false
 
+[dependencies.deck-repository]
+path = "../deck-repository"
+
 [dependencies.deck-store]
 path = "../deck-store"
-features = ["s3", "ssh"]
+features = ["ssh"]
 default-features = false
+
+[features]
+default = ["deck-store/local"]
+multi-user-mode = ["deck-protocol/daemon"]

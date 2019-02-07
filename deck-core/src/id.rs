@@ -3,7 +3,6 @@
 pub use self::manifest::ManifestId;
 pub use self::output::OutputId;
 pub use self::source::SourceId;
-pub use self::store::StoreId;
 
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
@@ -12,7 +11,6 @@ use std::path::{Path, PathBuf};
 mod manifest;
 mod output;
 mod source;
-mod store;
 
 /// Trait for store IDs which have an on-disk representation.
 pub trait FilesystemId: Clone + Debug + Display + Eq + Hash + Send + Sync {

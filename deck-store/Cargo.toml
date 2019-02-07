@@ -2,13 +2,9 @@
 name = "deck-store"
 version = "0.1.0"
 authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+description = "Library for interfacing with Deck stores"
+license = "MIT OR Apache-2.0"
 edition = "2018"
-
-[features]
-default = ["s3", "ssh"]
-local = ["diesel", "diesel_migrations"]
-s3 = ["rusoto_s3"]
-ssh = []
 
 [dependencies]
 blake2 = "0.8.0"
@@ -22,7 +18,6 @@ hyper = "0.12.20"
 hyper-tls = "0.3.1"
 ignore = "0.4.4"
 rand = "0.6.1"
-rusoto_s3 = { version = "0.35.0", optional = true }
 serde = { version = "1.0.80", features = ["derive"] }
 sha2 = "0.8.0"
 sha3 = "0.8.1"
@@ -30,6 +25,16 @@ tokio = "0.1.13"
 toml = "0.4.10"
 url = "1.7.2"
 lazy_static = "1.2.0"
+
+[dependencies.deck-binary-cache]
+path = "../deck-binary-cache"
+default-features = false
+
+[dependencies.deck-core]
+path = "../deck-core"
+
+[dependencies.deck-repository]
+path = "../deck-repository"
 
 [dependencies.diesel]
 version = "1.3.3"
@@ -44,3 +49,8 @@ optional = true
 package = "futures-preview"
 version = "0.3.0-alpha.12"
 features = ["compat", "io-compat"]
+
+[features]
+default = ["ssh"]
+local = ["diesel", "diesel_migrations"]
+ssh = ["deck-binary-cache/ssh"]

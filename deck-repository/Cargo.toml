@@ -1,0 +1,13 @@
+[package]
+name = "deck-repository"
+version = "0.1.0"
+authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+description = "Library for interfacing with Deck repositories"
+license = "MIT OR Apache-2.0"
+edition = "2018"
+
+[dependencies]
+futures-preview = "0.3.0-alpha.12"
+
+[dependencies.deck-core]
+path = "../deck-core"

@@ -1,0 +1,20 @@
+digraph crates {
+    node [shape=box];
+
+    deck -> deck_client;
+    deck -> deck_daemon;
+
+    deck_client -> deck_daemon;
+
+    deck_daemon -> deck_binary_cache;
+    deck_daemon -> deck_repository;
+    deck_daemon -> deck_store;
+
+    deck_store -> deck_binary_cache;
+    deck_store -> deck_core;
+    deck_store -> deck_repository;
+    deck_store -> deck_worker;
+
+    deck_binary_cache -> deck_core;
+    deck_repository -> deck_core;
+}

@@ -1,7 +1,0 @@
-[package]
-name = "deck-repository"
-version = "0.1.0"
-authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
-edition = "2018"
-
-[dependencies]

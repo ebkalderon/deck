@@ -2,9 +2,11 @@
 default-members = ["deck"]
 members = [
     "deck",
+    "deck-binary-cache",
     "deck-client",
     "deck-core",
     "deck-daemon",
     "deck-protocol",
+    "deck-repository",
     "deck-store"
 ]
