@@ -6,10 +6,6 @@ description = "Declarative system package manager"
 license = "MIT OR Apache-2.0"
 edition = "2018"
 
-[features]
-default = ["multi-user-mode", "deck-client/multi-user-mode"]
-multi-user-mode = ["deck-daemon"]
-
 [dependencies]
 clap = "2.32"
 structopt = "0.2"
@@ -37,3 +33,7 @@ required-features = ["multi-user-mode"]
 
 [dev-dependencies]
 serde_json = "1.0"
+
+[features]
+default = ["multi-user-mode"]
+multi-user-mode = ["deck-client/multi-user-mode", "deck-daemon"]

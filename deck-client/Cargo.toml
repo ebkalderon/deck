@@ -9,19 +9,21 @@ edition = "2018"
 [dependencies.deck-binary-cache]
 path = "../deck-binary-cache"
 features = ["local", "s3", "ssh"]
+optional = true
 
 [dependencies.deck-protocol]
 path = "../deck-protocol"
-default-features = false
+optional = true
 
 [dependencies.deck-repository]
 path = "../deck-repository"
+optional = true
 
 [dependencies.deck-store]
 path = "../deck-store"
-features = ["ssh"]
-default-features = false
+features = ["local", "ssh"]
+optional = true
 
 [features]
-default = ["deck-store/local"]
-multi-user-mode = ["deck-protocol/daemon"]
+default = ["deck-binary-cache", "deck-repository", "deck-store"]
+multi-user-mode = ["deck-protocol"]

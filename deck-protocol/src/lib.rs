@@ -19,7 +19,6 @@ pub mod builder {
 }
 
 /// Protocol for communicating with a daemon controlling a central store.
-#[cfg(feature = "daemon")]
 pub mod daemon {
     include!(concat!(env!("OUT_DIR"), "/deck.daemon.rs"));
 }

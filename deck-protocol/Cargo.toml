@@ -2,27 +2,18 @@
 name = "deck-protocol"
 version = "0.1.0"
 authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+description = "Protocol for communication with the Deck daemon"
+license = "MIT OR Apache-2.0"
 edition = "2018"
-
-[features]
-default = ["daemon"]
-daemon = []
 
 [dependencies]
 bytes = "0.4.11"
-# futures = "0.1.25"
 prost = "0.4.0"
 prost-derive = "0.4.0"
 prost-types = "0.4.0"
 
 [dependencies.tower-grpc]
 git = "https://github.com/tower-rs/tower-grpc"
-
-# [dependencies.tower-h2]
-# git = "https://github.com/tower-rs/tower-h2"
-
-# [dependencies.tower-http]
-# git = "https://github.com/tower-rs/tower-http"
 
 [build-dependencies]
 prost-build = "0.4.0"
