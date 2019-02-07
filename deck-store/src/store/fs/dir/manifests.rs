@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-use futures_preview::compat::Future01CompatExt;
+use futures_preview::compat::{Compat01As03, Future01CompatExt};
 use futures_preview::future::FutureExt;
+use futures_preview::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::fs::File;
 use tokio::io::{ErrorKind, Read, Write};
 
@@ -85,12 +86,12 @@ impl Directory for ManifestsDir {
     ) -> DirFuture<'a, Self::Output> {
         let future = async move {
             println!("doing the thing... {}", path.display());
-            let mut file = await!(path.create_file_rw())?;
+            let mut file = Compat01As03::new(await!(path.create_file())?);
             println!("succeeded");
             match input {
                 ManifestsInput::Manifest(manifest) => {
                     let toml = manifest.to_string();
-                    write!(file, "{}", toml).map_err(|_| ())?;
+                    await!(file.write_all(toml.as_bytes())).map_err(|_| ())?;
                     Ok(manifest)
                 }
                 ManifestsInput::Path(p) => {
@@ -102,12 +103,12 @@ impl Directory for ManifestsDir {
                         toml
                     };
                     let manifest = toml.parse().map_err(|_| ())?;
-                    write!(file, "{}", toml).map_err(|_| ())?;
+                    await!(file.write_all(toml.as_bytes())).map_err(|_| ())?;
                     Ok(manifest)
                 }
                 ManifestsInput::Text(text) => {
                     let manifest = text.parse().map_err(|_| ())?;
-                    write!(file, "{}", text).map_err(|_| ())?;
+                    await!(file.write_all(text.as_bytes())).map_err(|_| ())?;
                     Ok(manifest)
                 }
             }

@@ -17,7 +17,7 @@ mod source;
 /// Trait for store IDs which have an on-disk representation.
 pub trait FilesystemId: Clone + Debug + Display + Eq + Hash + Send + Sync {
     /// Attempts to parse the filesystem-agnostic ID from the given path.
-    fn from_path(path: &Path) -> Result<Self, ()>;
+    fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, ()>;
     /// Returns the `PathBuf` representation of this ID.
     fn to_path(&self) -> PathBuf;
 }

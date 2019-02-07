@@ -2,12 +2,13 @@
 
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::fs::{File as StdFile, Metadata};
+use std::io::{Read, Write};
 use std::ops::{Deref, DerefMut};
 
 use fs2::FileExt;
 use futures::{try_ready, Async, Future, Poll};
 use tokio::fs::{file, File};
-use tokio::io::Error as IoError;
+use tokio::io::{AsyncRead, AsyncWrite, Error as IoError};
 
 /// Trait adding file locking functionality to `tokio::File`.
 ///
@@ -41,7 +42,7 @@ where
     }
 }
 
-/// Wrapper type for `std::fs::File` which automatically unlocks the file when dropped.
+/// Wrapper type for `tokio::fs::File` which automatically unlocks the file when dropped.
 #[derive(Debug)]
 pub struct LockedFile(Option<File>);
 
@@ -55,6 +56,14 @@ impl LockedFile {
     #[inline]
     pub fn metadata(self) -> MetadataFuture {
         MetadataFuture::new(self)
+    }
+}
+
+impl AsyncRead for LockedFile {}
+
+impl AsyncWrite for LockedFile {
+    fn shutdown(&mut self) -> Poll<(), IoError> {
+        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").shutdown()
     }
 }
 
@@ -77,6 +86,22 @@ impl Drop for LockedFile {
         let file = self.0.take().expect("inner `tokio::fs::File` is empty!");
         let std_file = file.into_std();
         std_file.unlock().expect("failed to unlock file!");
+    }
+}
+
+impl Read for LockedFile {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, IoError> {
+        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").read(buf)
+    }
+}
+
+impl Write for LockedFile {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, IoError> {
+        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").write(buf)
+    }
+
+    fn flush(&mut self) -> Result<(), IoError> {
+        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").flush()
     }
 }
 
@@ -174,7 +199,7 @@ pub struct MetadataFuture {
 }
 
 impl MetadataFuture {
-    pub(super) fn new(mut file: LockedFile) -> Self {
+    fn new(mut file: LockedFile) -> Self {
         let std = file.0.take().expect("`LockedFile` must be initialized");
         MetadataFuture {
             inner: std.metadata(),

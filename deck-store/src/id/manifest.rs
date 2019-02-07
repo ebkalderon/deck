@@ -24,7 +24,7 @@ impl ManifestId {
         }
     }
 
-    pub fn parse<T: AsRef<str>>(name: T, version: T, hash: T) -> Result<Self, ()> {
+    pub fn parse<S: AsRef<str>>(name: S, version: S, hash: S) -> Result<Self, ()> {
         Ok(ManifestId {
             name: name.as_ref().parse()?,
             version: version.as_ref().into(),
@@ -61,8 +61,8 @@ impl Display for ManifestId {
 }
 
 impl FilesystemId for ManifestId {
-    fn from_path(path: &Path) -> Result<Self, ()> {
-        let raw_stem = path.file_stem().ok_or(())?;
+    fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, ()> {
+        let raw_stem = path.as_ref().file_stem().ok_or(())?;
         let stem = raw_stem.to_str().ok_or(())?;
         ManifestId::from_str(stem)
     }

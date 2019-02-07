@@ -4,8 +4,7 @@ use std::path::PathBuf;
 use hyper::{client::HttpConnector, Client};
 use hyper_tls::HttpsConnector;
 
-use self::dir::{ManifestsDir, OutputsDir, SourcesDir};
-use self::state::State;
+use self::dir::{ManifestsDir, OutputsDir, SourcesDir, State};
 use super::closure::Closure;
 use crate::id::{ManifestId, OutputId, SourceId};
 use crate::package::{Manifest, Source};
@@ -13,7 +12,6 @@ use crate::package::{Manifest, Source};
 mod dir;
 mod fetcher;
 mod file;
-mod state;
 
 const TEMP_DIR_NAME: &str = "tmp";
 const VAR_DIR_NAME: &str = "var";

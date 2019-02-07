@@ -41,8 +41,8 @@ impl Display for SourceId {
 }
 
 impl FilesystemId for SourceId {
-    fn from_path(path: &Path) -> Result<Self, ()> {
-        let raw_name = path.file_name().ok_or(())?;
+    fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, ()> {
+        let raw_name = path.as_ref().file_name().ok_or(())?;
         let name = raw_name.to_str().ok_or(())?;
         SourceId::from_str(name)
     }

@@ -27,9 +27,9 @@ impl OutputId {
         }
     }
 
-    pub fn parse<T>(name: T, version: T, output: Option<T>, hash: T) -> Result<Self, ()>
+    pub fn parse<S>(name: S, version: S, output: Option<S>, hash: S) -> Result<Self, ()>
     where
-        T: AsRef<str>,
+        S: AsRef<str>,
     {
         let output = match output {
             Some(s) => Some(s.as_ref().parse()?),
@@ -84,8 +84,8 @@ impl Display for OutputId {
 }
 
 impl FilesystemId for OutputId {
-    fn from_path(path: &Path) -> Result<Self, ()> {
-        let raw_name = path.file_name().ok_or(())?;
+    fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, ()> {
+        let raw_name = path.as_ref().file_name().ok_or(())?;
         let name = raw_name.to_str().ok_or(())?;
         OutputId::from_str(name)
     }

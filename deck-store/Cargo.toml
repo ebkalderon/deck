@@ -43,4 +43,4 @@ optional = true
 [dependencies.futures-preview]
 package = "futures-preview"
 version = "0.3.0-alpha.12"
-features = ["compat"]
+features = ["compat", "io-compat"]
