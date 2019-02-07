@@ -1,3 +1,10 @@
 [workspace]
-members = ["deck", "deck-client", "deck-daemon", "deck-protocol", "deck-store"]
-default-members = ["deck", "deck-client", "deck-daemon", "deck-protocol", "deck-store"]
+default-members = ["deck"]
+members = [
+    "deck",
+    "deck-client",
+    "deck-core",
+    "deck-daemon",
+    "deck-protocol",
+    "deck-store"
+]

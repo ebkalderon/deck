@@ -1,0 +1,16 @@
+[package]
+name = "deck-core"
+version = "0.1.0"
+authors = ["Eyal Kalderon <ebkalderon@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+blake2 = "0.8.0"
+data-encoding = "2.1.2"
+rand = "0.6.5"
+toml = "0.4.10"
+url = "1.7.2"
+
+[dependencies.serde]
+version = "1.0.87"
+features = ["derive"]
