@@ -2,20 +2,16 @@ use std::fs;
 use std::path::PathBuf;
 
 use deck_core::{Manifest, ManifestId, OutputId, Source, SourceId};
-use hyper::{client::HttpConnector, Client};
-use hyper_tls::HttpsConnector;
 
-use self::dir::{ManifestsDir, OutputsDir, SourcesDir, State};
+use self::manifests::{ManifestsDir, ManifestsInput};
+use self::outputs::OutputsDir;
+use self::sources::SourcesDir;
+use super::dir::State;
 use crate::closure::Closure;
 
-mod dir;
-mod fetcher;
-mod file;
-
-const TEMP_DIR_NAME: &str = "tmp";
-const VAR_DIR_NAME: &str = "var";
-
-pub(crate) type HttpsClient = Client<HttpsConnector<HttpConnector>>;
+mod manifests;
+mod outputs;
+mod sources;
 
 #[derive(Debug)]
 pub struct StoreDir {
@@ -49,7 +45,6 @@ impl StoreDir {
     }
 
     pub async fn write_manifest(&self, manifest: Manifest) -> Result<Manifest, ()> {
-        use self::dir::ManifestsInput;
         let prefix = &self.prefix;
         let input = ManifestsInput::Manifest(manifest);
         let (_, out) = await!(self.manifests.write(prefix, input))?;

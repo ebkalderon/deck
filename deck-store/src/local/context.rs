@@ -1,6 +1,11 @@
 use std::sync::Arc;
 
-use super::fs::{HttpsClient, StoreDir};
+use hyper::{client::HttpConnector, Client};
+use hyper_tls::HttpsConnector;
+
+use super::store_dir::StoreDir;
+
+pub(crate) type HttpsClient = Client<HttpsConnector<HttpConnector>>;
 
 #[derive(Clone, Debug)]
 pub struct Context {

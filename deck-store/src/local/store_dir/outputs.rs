@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use deck_core::OutputId;
 
-use super::{DirFuture, Directory, ReadPath, WritePath};
+use crate::local::dir::{DirFuture, Directory, ReadPath, WritePath};
 
 #[derive(Debug)]
 pub struct OutputsDir;

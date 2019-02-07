@@ -3,12 +3,12 @@ use std::path::PathBuf;
 use deck_core::{Manifest, ManifestId};
 use futures_preview::compat::{Compat01As03, Future01CompatExt};
 use futures_preview::future::FutureExt;
-use futures_preview::io::{AsyncReadExt, AsyncWriteExt};
+use futures_preview::io::AsyncWriteExt;
 use tokio::fs::File;
-use tokio::io::{ErrorKind, Read, Write};
+use tokio::io::{ErrorKind, Read};
 
-use super::super::file::FileFutureExt;
-use super::{DirFuture, Directory, ReadPath, WritePath};
+use crate::local::dir::{DirFuture, Directory, ReadPath, WritePath};
+use crate::local::file::FileFutureExt;
 
 #[derive(Clone, Debug)]
 pub enum ManifestsInput {

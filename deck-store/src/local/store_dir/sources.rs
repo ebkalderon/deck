@@ -2,9 +2,8 @@ use std::path::PathBuf;
 
 use deck_core::{Hash, Source, SourceId};
 use futures_preview::future::{self, FutureExt};
-use futures_preview::StreamExt;
 
-use super::{DirFuture, Directory, ReadPath, WritePath};
+use crate::local::dir::{DirFuture, Directory, ReadPath, WritePath};
 
 #[derive(Clone, Debug)]
 pub enum SourceInput {

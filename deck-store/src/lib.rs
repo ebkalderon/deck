@@ -55,9 +55,6 @@ pub enum Repair {
 /// Represents a content-addressable store of packages.
 pub trait Store: BinaryCache + Debug {
     fn supported_platforms<'a>(&'a self) -> StoreFuture<'a, Vec<Platform>>;
-    fn add_binary_cache<'a, B: BinaryCache>(&'a mut self, cache: B) -> StoreFuture<'a, ()>;
-    fn add_remote_store<'a, S: Store>(&'a mut self, store: S) -> StoreFuture<'a, ()>;
-    fn add_repository<'a, R: Repository>(&'a mut self, repo: R) -> StoreFuture<'a, ()>;
     fn build_manifest(&mut self, manifest: Manifest) -> BuildStream;
     fn get_build_log<'a>(&'a mut self, id: &'a ManifestId) -> StoreFuture<'a, Option<String>>;
     fn verify<'a>(&'a mut self, check: CheckContents, repair: Repair) -> StoreFuture<'a, ()>;
@@ -71,7 +68,10 @@ pub struct BuildStream(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>)
 
 impl BuildStream {
     /// Creates a new `BuildStream` from the given progress stream.
-    pub(crate) fn new<S: Stream<Item = Result<Progress, ()>> + Send + 'static>(stream: S) -> Self {
+    pub fn new<S>(stream: S) -> Self
+    where
+        S: Stream<Item = Result<Progress, ()>> + Send + 'static,
+    {
         BuildStream(stream.boxed())
     }
 }
