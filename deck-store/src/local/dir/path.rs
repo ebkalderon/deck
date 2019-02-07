@@ -88,14 +88,17 @@ impl WritePath {
         }
     }
 
+    #[inline]
     pub fn as_id(&self) -> &str {
         &self.id
     }
 
+    #[inline]
     pub fn as_path(&self) -> &Path {
         &self.temp_path
     }
 
+    #[inline]
     pub fn display(&self) -> Display {
         self.temp_path.display()
     }
@@ -148,14 +151,17 @@ impl ReadPath {
         }
     }
 
+    #[inline]
     pub fn as_id(&self) -> &str {
         &self.id
     }
 
+    #[inline]
     pub fn as_path(&self) -> &Path {
         &self.path
     }
 
+    #[inline]
     pub fn exists(&self) -> bool {
         self.path.exists()
     }
