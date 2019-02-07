@@ -67,6 +67,10 @@ pub enum DockerContainer {
     Name(String),
 }
 
+/// Unique identifier for a content-addressable store.
+///
+/// ## Example
+///
 /// `local+file:///deck/store`
 /// `ssh+ssh://[user@]host[:port]`
 /// `docker+unix:///var/run/docker.sock?container_id=foo&container_name=bar&user=baz`
