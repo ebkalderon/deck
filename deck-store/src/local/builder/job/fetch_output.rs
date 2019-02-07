@@ -4,7 +4,7 @@ use std::task::{LocalWaker, Poll};
 use deck_core::ManifestId;
 use futures_preview::stream::Stream;
 
-use crate::context::Context;
+use crate::local::context::Context;
 use crate::progress::Progress;
 
 #[must_use = "streams do nothing unless polled"]

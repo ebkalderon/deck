@@ -7,7 +7,7 @@ use futures_preview::future::{self, FutureExt, TryFutureExt};
 use futures_preview::stream::{self, Stream, StreamExt, TryStreamExt};
 use hyper::header::CONTENT_LENGTH;
 
-use crate::context::Context;
+use crate::local::context::Context;
 use crate::progress::{Downloading, Progress};
 
 #[must_use = "streams do nothing unless polled"]

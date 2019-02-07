@@ -54,3 +54,7 @@ features = ["compat", "io-compat"]
 default = ["ssh"]
 local = ["diesel", "diesel_migrations"]
 ssh = ["deck-binary-cache/ssh"]
+
+[[example]]
+name = "create_manifest"
+required-features = ["local"]

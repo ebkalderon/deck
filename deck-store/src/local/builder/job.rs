@@ -10,7 +10,7 @@ use futures_preview::future::{self, FutureExt, TryFutureExt};
 use futures_preview::stream::{self, Stream, StreamExt};
 
 use super::futures::JobFuture;
-use crate::context::Context;
+use crate::local::context::Context;
 use crate::progress::{Progress, ProgressSender};
 
 mod build_manifest;

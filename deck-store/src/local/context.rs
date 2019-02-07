@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::fs::{HttpsClient, StoreDir};
+use super::fs::{HttpsClient, StoreDir};
 
 #[derive(Clone, Debug)]
 pub struct Context {

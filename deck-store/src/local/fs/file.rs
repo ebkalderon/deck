@@ -63,7 +63,10 @@ impl AsyncRead for LockedFile {}
 
 impl AsyncWrite for LockedFile {
     fn shutdown(&mut self) -> Poll<(), IoError> {
-        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").shutdown()
+        self.0
+            .as_mut()
+            .expect("inner `tokio::fs::File` is empty!")
+            .shutdown()
     }
 }
 
@@ -91,17 +94,26 @@ impl Drop for LockedFile {
 
 impl Read for LockedFile {
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, IoError> {
-        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").read(buf)
+        self.0
+            .as_mut()
+            .expect("inner `tokio::fs::File` is empty!")
+            .read(buf)
     }
 }
 
 impl Write for LockedFile {
     fn write(&mut self, buf: &[u8]) -> Result<usize, IoError> {
-        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").write(buf)
+        self.0
+            .as_mut()
+            .expect("inner `tokio::fs::File` is empty!")
+            .write(buf)
     }
 
     fn flush(&mut self) -> Result<(), IoError> {
-        self.0.as_mut().expect("inner `tokio::fs::File` is empty!").flush()
+        self.0
+            .as_mut()
+            .expect("inner `tokio::fs::File` is empty!")
+            .flush()
     }
 }
 

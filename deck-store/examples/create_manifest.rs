@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use deck_store::core::Manifest;
-use deck_store::fs::StoreDir;
+use deck_store::local::fs::StoreDir;
 use futures_preview::future::{FutureExt, TryFutureExt};
 use lazy_static::lazy_static;
 

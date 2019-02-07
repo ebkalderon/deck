@@ -9,8 +9,9 @@ use futures_preview::sink::SinkExt;
 use futures_preview::stream::{Stream, StreamExt};
 
 use super::BuildGraph;
-use crate::context::Context;
+use crate::local::context::Context;
 use crate::progress::{Progress, ProgressReceiver, ProgressSender};
+use crate::BuildStream;
 
 /// Executes a discrete unit of work during the build process.
 ///
@@ -99,50 +100,6 @@ impl Future for BuildFuture {
     }
 }
 
-/// Drives the builder to completion and reports the progress of each job in a stream.
-#[must_use = "streams do nothing unless polled"]
-pub struct BuildStream(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>);
-
-impl BuildStream {
-    /// Creates a new `BuildStream`.
-    ///
-    /// Requires a `BuildFuture` which represents the entire build graph and the receiving half of
-    /// the `ProgressReceiver` used to report progress.
-    pub(super) fn new<F>(future: F, rx: ProgressReceiver) -> Self
-    where
-        F: Future<Output = Result<BuildFuture, ()>> + Send + 'static,
-    {
-        let build_started = async move {
-            match await!(future) {
-                Err(err) => Err(err),
-                Ok(build) => {
-                    tokio::spawn(build.map(Ok).compat());
-                    Ok(Progress::Started)
-                }
-            }
-        };
-
-        let progress = build_started.into_stream().select(rx);
-        BuildStream(progress.boxed())
-    }
-}
-
-impl Debug for BuildStream {
-    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-        fmt.debug_tuple(stringify!(BuildStream))
-            .field(&"Pin<Box<dyn Stream<Item = Result<Progress, Error>> + Send>>")
-            .finish()
-    }
-}
-
-impl Stream for BuildStream {
-    type Item = Result<Progress, ()>;
-
-    fn poll_next(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Option<Self::Item>> {
-        self.0.as_mut().poll_next(lw)
-    }
-}
-
 /// Internal state of the builder.
 pub struct BuilderState {
     /// Shared context with access to the store and fetchers.
@@ -183,5 +140,29 @@ impl Future for InnerFuture {
 
     fn poll(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Self::Output> {
         self.0.as_mut().poll(lw)
+    }
+}
+
+impl BuildStream {
+    /// Creates a new `BuildStream` which drives the builder to completion.
+    ///
+    /// Requires a `BuildFuture` which represents the entire build graph and the receiving half of
+    /// the `ProgressReceiver` used to report progress.
+    pub(super) fn from_future<F>(future: F, rx: ProgressReceiver) -> Self
+    where
+        F: Future<Output = Result<BuildFuture, ()>> + Send + 'static,
+    {
+        let build_started = async move {
+            match await!(future) {
+                Err(err) => Err(err),
+                Ok(build) => {
+                    tokio::spawn(build.map(Ok).compat());
+                    Ok(Progress::Started)
+                }
+            }
+        };
+
+        let progress = build_started.into_stream().select(rx);
+        BuildStream(progress.boxed())
     }
 }

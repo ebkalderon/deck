@@ -60,18 +60,17 @@
 //! fully self-contained inside the `BuildStream`, ready to be processed with `for_each()` on an
 //! executor.
 
-pub use self::futures::BuildStream;
-
 use std::collections::BTreeMap;
 
-use deck_core::{ManifestId, Manifest};
+use deck_core::{Manifest, ManifestId};
 use futures_preview::future::{self, TryFutureExt};
 use futures_preview::stream;
 
 use self::futures::{BuildFuture, BuilderState, InnerFuture, JobFuture};
 use self::job::{BuildManifest, FetchSource, IntoJob};
-use crate::context::Context;
+use super::context::Context;
 use crate::progress::{self, ProgressReceiver, ProgressSender};
+use crate::BuildStream;
 
 mod futures;
 mod job;
@@ -296,7 +295,7 @@ impl DependenciesBuilt {
     pub fn build_package(mut self) -> BuildStream {
         let progress = self.progress.take().unwrap();
         let built = self.build_package_recursively().map_ok(|(built, _)| built);
-        BuildStream::new(built, progress)
+        BuildStream::from_future(built, progress)
     }
 
     /// Builds the package itself, returning it along with the modified `BuildGraph`.

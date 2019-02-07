@@ -5,25 +5,27 @@
 
 pub extern crate deck_core as core;
 
-pub use self::builder::BuildStream;
 pub use self::closure::Closure;
 pub use self::id::StoreId;
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::future::Future;
 use std::pin::Pin;
+use std::task::{LocalWaker, Poll};
 
 use deck_binary_cache::BinaryCache;
 use deck_core::{Manifest, ManifestId, Platform};
 use deck_repository::Repository;
+use futures_preview::stream::{Stream, StreamExt};
 
-pub mod builder;
-pub mod fs;
+use self::progress::Progress;
+
+#[cfg(feature = "local")]
+pub mod local;
 pub mod progress;
 pub mod remote;
 
 mod closure;
-mod context;
 mod id;
 
 // NOTE: All this noise has been to work fine with a simple `async fn`, with no need for associated
@@ -50,6 +52,7 @@ pub enum Repair {
     Disabled,
 }
 
+/// Represents a content-addressable store of packages.
 pub trait Store: BinaryCache + Debug {
     fn supported_platforms<'a>(&'a self) -> StoreFuture<'a, Vec<Platform>>;
     fn add_binary_cache<'a, B: BinaryCache>(&'a mut self, cache: B) -> StoreFuture<'a, ()>;
@@ -58,4 +61,33 @@ pub trait Store: BinaryCache + Debug {
     fn build_manifest(&mut self, manifest: Manifest) -> BuildStream;
     fn get_build_log<'a>(&'a mut self, id: &'a ManifestId) -> StoreFuture<'a, Option<String>>;
     fn verify<'a>(&'a mut self, check: CheckContents, repair: Repair) -> StoreFuture<'a, ()>;
+}
+
+/// Stream which reports the current progress of a builder.
+///
+/// Created from the `Store::build_manifest()` method.
+#[must_use = "streams do nothing unless polled"]
+pub struct BuildStream(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>);
+
+impl BuildStream {
+    /// Creates a new `BuildStream` from the given progress stream.
+    pub(crate) fn new<S: Stream<Item = Result<Progress, ()>> + Send + 'static>(stream: S) -> Self {
+        BuildStream(stream.boxed())
+    }
+}
+
+impl Debug for BuildStream {
+    fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+        fmt.debug_tuple(stringify!(BuildStream))
+            .field(&"Pin<Box<dyn Stream<Item = Result<Progress, Error>> + Send>>")
+            .finish()
+    }
+}
+
+impl Stream for BuildStream {
+    type Item = Result<Progress, ()>;
+
+    fn poll_next(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Option<Self::Item>> {
+        self.0.as_mut().poll_next(lw)
+    }
 }

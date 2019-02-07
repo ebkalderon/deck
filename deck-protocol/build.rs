@@ -28,7 +28,6 @@ fn main() {
             &["proto", "proto/deck-binary-cache"],
         ).unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
 
-    #[cfg(feature = "daemon")]
     tower_grpc_build::Config::new()
         .enable_server(true)
         .enable_client(true)
