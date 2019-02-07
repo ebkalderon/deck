@@ -4,18 +4,19 @@ digraph crates {
     subgraph cluster_single_user {
         label="Single User Mode";
 
-        s_deck -> s_client;
+        s_core -> s_binary_cache;
+        s_core -> s_repository;
+        s_core -> s_store;
 
-        s_client -> s_binary_cache;
-        s_client -> s_repository;
-        s_client -> s_store;
+        s_binary_cache -> s_client;
+        s_binary_cache -> s_store;
 
-        s_store -> s_binary_cache;
-        s_store -> s_core;
-        s_store -> s_repository;
+        s_repository -> s_client;
+        s_repository -> s_store;
 
-        s_binary_cache -> s_core;
-        s_repository -> s_core;
+        s_store -> s_client;
+
+        s_client -> s_deck;
 
         s_core [label="deck-core"];
         s_deck [label="deck"];
@@ -29,22 +30,24 @@ digraph crates {
     subgraph cluster_multi_user {
         label="Multi User Mode";
 
-        m_deck -> m_client;
-        m_deck -> m_daemon;
+        m_core -> m_binary_cache;
+        m_core -> m_repository;
+        m_core -> m_store;
 
-        m_client -> m_protocol;
+        m_binary_cache -> m_daemon;
+        m_binary_cache -> m_store;
 
-        m_daemon -> m_binary_cache;
-        m_daemon -> m_protocol;
-        m_daemon -> m_repository;
-        m_daemon -> m_store;
+        m_repository -> m_daemon;
+        m_repository -> m_store;
 
-        m_store -> m_binary_cache;
-        m_store -> m_core;
-        m_store -> m_repository;
+        m_store -> m_daemon;
 
-        m_binary_cache -> m_core;
-        m_repository -> m_core;
+        m_protocol -> m_client;
+        m_protocol -> m_daemon;
+
+        m_client -> m_deck;
+
+        m_daemon -> m_deck;
 
         m_core [label="deck-core"];
         m_deck [label="deck"];
