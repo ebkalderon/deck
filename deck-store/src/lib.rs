@@ -8,6 +8,7 @@ pub extern crate deck_core as core;
 pub use self::closure::Closure;
 pub use self::id::StoreId;
 
+use std::ffi::OsString;
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::future::Future;
 use std::pin::Pin;
@@ -15,7 +16,6 @@ use std::task::{LocalWaker, Poll};
 
 use deck_binary_cache::BinaryCache;
 use deck_core::{Manifest, ManifestId, Platform};
-use deck_repository::Repository;
 use futures_preview::stream::{Stream, StreamExt};
 
 use self::progress::Progress;
@@ -56,7 +56,7 @@ pub enum Repair {
 pub trait Store: BinaryCache + Debug {
     fn supported_platforms<'a>(&'a self) -> StoreFuture<'a, Vec<Platform>>;
     fn build_manifest(&mut self, manifest: Manifest) -> BuildStream;
-    fn get_build_log<'a>(&'a mut self, id: &'a ManifestId) -> StoreFuture<'a, Option<String>>;
+    fn get_build_log<'a>(&'a mut self, id: &'a ManifestId) -> StoreFuture<'a, Option<OsString>>;
     fn verify<'a>(&'a mut self, check: CheckContents, repair: Repair) -> StoreFuture<'a, ()>;
 }
 

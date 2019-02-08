@@ -1,3 +1,5 @@
+use std::ffi::OsString;
+
 use deck_core::{Manifest, ManifestId, OutputId, Platform};
 use deck_binary_cache::{BinaryCache, BinaryCacheFuture};
 use deck_repository::Repository;
@@ -46,7 +48,7 @@ impl Store for LocalStore {
         unimplemented!()
     }
 
-    fn get_build_log<'a>(&'a mut self, _id: &'a ManifestId) -> StoreFuture<'a, Option<String>> {
+    fn get_build_log<'a>(&'a mut self, _id: &'a ManifestId) -> StoreFuture<'a, Option<OsString>> {
         unimplemented!()
     }
 
