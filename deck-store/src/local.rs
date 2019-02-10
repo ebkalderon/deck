@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 
-use deck_core::{Manifest, ManifestId, OutputId, Platform};
 use deck_binary_cache::{BinaryCache, BinaryCacheFuture};
+use deck_core::{Manifest, ManifestId, OutputId, Platform};
 use deck_repository::Repository;
 
 use super::{BuildStream, CheckContents, Repair, Store, StoreFuture};

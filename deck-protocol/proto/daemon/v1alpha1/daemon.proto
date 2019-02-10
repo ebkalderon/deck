@@ -1,0 +1,26 @@
+// Protocol for communicating with a daemon in multi-user mode.
+
+syntax = "proto3";
+
+package deck.daemon.v1alpha1;
+
+import "build_manifest.proto";
+import "get_build_log.proto";
+import "get_transaction_diff.proto";
+import "verify.proto";
+
+option csharp_namespace = "Deck.Daemon.V1Alpha1";
+option java_multiple_files = true;
+option java_package = "org.deck.daemon.v1alpha1";
+option java_outer_classname = "DeckDaemonProto";
+option objc_class_prefix = "DECKD";
+
+// Manages a system-wide globally readable Deck store.
+//
+// This interface should closely mimic `LocalStore`.
+service Daemon {
+    rpc GetTransactionDiff(DiffRequest) returns (DiffResponse) {}
+    rpc BuildManifest(BuildRequest) returns (stream BuildResponse) {}
+    rpc GetBuildLog(LogRequest) returns (LogResponse) {}
+    rpc Verify(VerifyRequest) returns (stream VerifyResponse) {}
+}

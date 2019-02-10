@@ -7,8 +7,8 @@ use futures_preview::compat::Future01CompatExt;
 use futures_preview::future::{FutureExt, TryFutureExt};
 use tokio::fs::{self, File, OpenOptions};
 
-use crate::local::{TEMP_DIR_NAME, VAR_DIR_NAME};
 use crate::local::file::{FileFutureExt, LockedFile};
+use crate::local::{TEMP_DIR_NAME, VAR_DIR_NAME};
 
 const LOCK_FILE_EXT: &str = "lock";
 const MARK_LOCK_AS_STALE: &[u8] = "stale".as_bytes();

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package deck.daemon.v1alpha1;
+
+option csharp_namespace = "Deck.Daemon.V1Alpha1";
+option java_multiple_files = true;
+option java_package = "org.deck.daemon.v1alpha1";
+option java_outer_classname = "DeckDaemonProto";
+option objc_class_prefix = "DECKD";
+
+message LogRequest {
+    string manifest_id = 1;
+}
+
+message LogResponse {
+    bytes description = 1;
+}

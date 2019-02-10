@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package deck.daemon.v1alpha1;
+
+option csharp_namespace = "Deck.Daemon.V1Alpha1";
+option java_multiple_files = true;
+option java_package = "org.deck.daemon.v1alpha1";
+option java_outer_classname = "DeckDaemonProto";
+option objc_class_prefix = "DECKD";
+
+message VerifyRequest {
+    enum CheckContents {
+        CHECK_CONTENTS_ENABLED = 0;
+        CHECK_CONTENTS_DISABLED = 1;
+    }
+    enum Repair {
+        REPAIR_ENABLED = 0;
+        REPAIR_DISABLED = 1;
+    }
+
+    CheckContents check_contents = 1;
+    Repair repair = 2;
+}
+
+message VerifyResponse {
+    message Checked {
+        oneof resource {
+            string manifest_id = 1;
+            string output_id = 2;
+            string source_id = 3;
+        }
+    }
+    message Repaired {
+        oneof resource {
+            string manifest_id = 1;
+            string output_id = 2;
+            string source_id = 3;
+        }
+    }
+
+    oneof status {
+        Checked checked = 1;
+        Repaired repaired = 2;
+    }
+}

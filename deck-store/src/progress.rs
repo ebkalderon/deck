@@ -11,7 +11,6 @@ pub(crate) fn progress_channel(buffer: usize) -> (ProgressSender, ProgressReceiv
 
 #[derive(Clone, Debug)]
 pub enum Progress {
-    Started,
     Downloading(Downloading),
     Blocked { package_id: ManifestId },
     Building(Building),

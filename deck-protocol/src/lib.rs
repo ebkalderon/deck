@@ -3,22 +3,7 @@
 #[macro_use]
 extern crate prost_derive;
 
-/// Common data types used across the Deck protocols.
-pub mod core {
-    include!(concat!(env!("OUT_DIR"), "/deck.core.rs"));
-}
-
-/// Protocol for communicating with a remote binary cache.
-pub mod binary_cache {
-    include!(concat!(env!("OUT_DIR"), "/deck.binary_cache.rs"));
-}
-
-/// Protocol for communicating with a sandboxed builder.
-pub mod builder {
-    include!(concat!(env!("OUT_DIR"), "/deck.builder.rs"));
-}
-
-/// Protocol for communicating with a daemon controlling a central store.
+/// Protocol for communicating with a daemon managing a central store in multi-user mode.
 pub mod daemon {
-    include!(concat!(env!("OUT_DIR"), "/deck.daemon.rs"));
+    include!(concat!(env!("OUT_DIR"), "/deck.daemon.v1alpha1.rs"));
 }

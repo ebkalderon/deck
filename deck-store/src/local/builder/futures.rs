@@ -6,7 +6,7 @@ use std::task::{LocalWaker, Poll};
 use deck_core::{Manifest, ManifestId};
 use futures_preview::future::{self, FutureExt, TryFutureExt};
 use futures_preview::sink::SinkExt;
-use futures_preview::stream::{Stream, StreamExt};
+use futures_preview::stream::{self, Stream, StreamExt};
 
 use super::BuildGraph;
 use crate::local::context::Context;
@@ -154,15 +154,20 @@ impl BuildStream {
     {
         let build_started = async move {
             match await!(future) {
-                Err(err) => Err(err),
+                Err(err) => vec![Err(err)],
                 Ok(build) => {
                     tokio::spawn(build.map(Ok).compat());
-                    Ok(Progress::Started)
+                    Vec::new()
                 }
             }
         };
 
-        let progress = build_started.into_stream().select(rx);
-        BuildStream(progress.boxed())
+        let progress = build_started
+            .map(|res| stream::iter(res))
+            .flatten_stream()
+            .select(rx)
+            .boxed();
+
+        BuildStream(progress)
     }
 }

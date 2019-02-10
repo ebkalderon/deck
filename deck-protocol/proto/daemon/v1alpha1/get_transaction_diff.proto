@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package deck.daemon.v1alpha1;
+
+option csharp_namespace = "Deck.Daemon.V1Alpha1";
+option java_multiple_files = true;
+option java_package = "org.deck.daemon.v1alpha1";
+option java_outer_classname = "DeckDaemonProto";
+option objc_class_prefix = "DECKD";
+
+message DiffRequest {
+    repeated string to_install = 1;
+    repeated string to_upgrade = 2;
+    repeated string to_uninstall = 3;
+}
+
+message DiffResponse {
+    message Installed {
+        string manifest_id = 1;
+        InstallDetails details = 2;
+    }
+    message Upgraded {
+        string manifest_id = 1;
+        string upgraded_id = 2;
+        InstallDetails details = 3;
+    }
+    message InstallDetails {
+        enum Local {
+            LOCAL_MEMOIZE = 0;
+            LOCAL_REINSTALL = 1;
+            LOCAL_BUILD = 2;
+        }
+        message FetchRemote {
+            uint64 size = 1;
+            uint64 unpacked_size = 2;
+            oneof source {
+                string binary_cache_id = 3;
+                string remote_store_id = 4;
+            }
+        }
+        message BuildRemote {
+            string store_id = 1;
+        }
+
+        oneof kind {
+            Local local = 1;
+            FetchRemote fetch_remote = 2;
+            BuildRemote build_remote = 3;
+        }
+    }
+
+    repeated Installed installed = 1;
+    repeated Upgraded upgraded = 2;
+    repeated string uninstalled = 3;
+}

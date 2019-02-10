@@ -2,8 +2,8 @@ use std::path::Path;
 
 use deck_core::FilesystemId;
 
-use super::Directory;
 use super::path::{DirectoryPath, LockedPath};
+use super::Directory;
 
 #[derive(Debug)]
 pub struct State<D> {
