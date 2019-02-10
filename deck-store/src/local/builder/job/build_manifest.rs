@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use deck_core::Manifest;
 use futures_preview::compat::Future01CompatExt;
-use futures_preview::future::{self, FutureExt, TryFutureExt};
+use futures_preview::future::{self, FutureExt};
 use futures_preview::stream::{self, Stream};
 
 use crate::local::context::Context;
