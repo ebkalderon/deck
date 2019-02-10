@@ -3,14 +3,13 @@ use std::pin::Pin;
 use std::task::{LocalWaker, Poll};
 use std::time::{Duration, Instant};
 
-use chrono::Utc;
 use deck_core::Manifest;
 use futures_preview::compat::Future01CompatExt;
 use futures_preview::future::{self, FutureExt, TryFutureExt};
 use futures_preview::stream::{self, Stream};
 
 use crate::local::context::Context;
-use crate::progress::{Building, BuildingStatus, Finished, FinishedStatus, Progress};
+use crate::progress::{Building, BuildStatus, Finished, FinalStatus, Progress};
 
 #[must_use = "streams do nothing unless polled"]
 pub struct BuildManifest(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>);
@@ -23,7 +22,7 @@ impl BuildManifest {
             package_id: id.clone(),
             current_task: 3,
             total_tasks: 5,
-            status: BuildingStatus::Compiling,
+            status: BuildStatus::Compiling,
             description: "make all".to_string(),
             stdout: Vec::new(),
             stderr: Vec::new(),
@@ -31,8 +30,7 @@ impl BuildManifest {
 
         let finished = Progress::Finished(Finished {
             package_id: id,
-            status: FinishedStatus::Built,
-            timestamp: Utc::now(),
+            status: FinalStatus::Built,
         });
 
         let when = Instant::now() + Duration::from_millis(1000);

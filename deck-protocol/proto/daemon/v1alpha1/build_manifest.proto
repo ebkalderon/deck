@@ -8,10 +8,63 @@ option java_package = "org.deck.daemon.v1alpha1";
 option java_outer_classname = "DeckDaemonProto";
 option objc_class_prefix = "DECKD";
 
+import "google/protobuf/timestamp.proto";
+
 message BuildRequest {
-    string manifest_id = 1;
+    repeated string manifest_id = 1;
 }
 
 message BuildResponse {
-    string description = 1;
+    message Blocked {
+        string manifest_id = 1;
+        string description = 2;
+    }
+    message Downloading {
+        string manifest_id = 1;
+        string source = 2;
+        uint64 downloaded_bytes = 3;
+        uint64 total_bytes = 4;
+    }
+    message Building {
+        enum Status {
+            STATUS_STARTED = 0;
+            STATUS_PREPARING = 1;
+            STATUS_CONFIGURING = 2;
+            STATUS_COMPILING = 3;
+            STATUS_TESTING = 4;
+            STATUS_FINALIZING = 5;
+        }
+
+        string manifest_id = 1;
+        Status status = 2;
+        uint32 current_task = 3;
+        uint32 total_tasks = 4;
+        string description = 5;
+        bytes stdout = 6;
+        bytes stderr = 7;
+    }
+    message Installing {
+        string manifest_id = 1;
+        string description = 2;
+    }
+    message Finished {
+        enum Status {
+            STATUS_MEMOIZED = 0;
+            STATUS_REINSTALLED = 1;
+            STATUS_DOWNLOADED = 2;
+            STATUS_BUILT = 3;
+        }
+
+        string manifest_id = 1;
+        Status status = 2;
+    }
+
+    google.protobuf.Timestamp update_time = 1;
+    oneof status {
+        Blocked blocked = 2;
+        Downloading downloading = 3;
+        Building building = 4;
+        Installing installing = 5;
+        Finished finished = 6;
+    }
 }

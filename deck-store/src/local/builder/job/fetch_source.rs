@@ -8,7 +8,7 @@ use futures_preview::stream::{self, Stream, StreamExt, TryStreamExt};
 use hyper::header::CONTENT_LENGTH;
 
 use crate::local::context::Context;
-use crate::progress::{Downloading, Progress};
+use crate::progress::{Blocked, Downloading, Progress};
 
 #[must_use = "streams do nothing unless polled"]
 pub struct FetchSource(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>);
@@ -50,7 +50,7 @@ fn fetch_uri(ctx: Context, id: ManifestId, uri: String, _hash: String) -> FetchS
             package_id: id.clone(),
             downloaded_bytes: 0,
             total_bytes: len,
-            source: uri,
+            source: uri.clone(),
         };
 
         let downloading = response
@@ -62,7 +62,11 @@ fn fetch_uri(ctx: Context, id: ManifestId, uri: String, _hash: String) -> FetchS
                 Progress::Downloading(progress.clone())
             });
 
-        let progress = Progress::Blocked { package_id: id };
+        let progress = Progress::Blocked(Blocked {
+            package_id: id,
+            description: format!("fetched source from `{}`", uri),
+        });
+
         let done = downloading.chain(stream::once(future::ok(progress)));
         Ok(done)
     };
@@ -76,7 +80,8 @@ fn fetch_uri(ctx: Context, id: ManifestId, uri: String, _hash: String) -> FetchS
 }
 
 fn fetch_git(_ctx: Context, id: ManifestId) -> FetchSource {
-    FetchSource::from_stream(stream::once(future::ok(Progress::Blocked {
+    FetchSource::from_stream(stream::once(future::ok(Progress::Blocked(Blocked {
         package_id: id,
-    })))
+        description: "checked out repository".to_string(),
+    }))))
 }
