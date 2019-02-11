@@ -4,6 +4,8 @@
 
 pub extern crate deck_core as core;
 
+#[cfg(feature = "local")]
+pub use self::local::LocalCache;
 #[cfg(feature = "s3")]
 pub use self::s3::S3Cache;
 
@@ -12,6 +14,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use deck_core::OutputId;
+use futures::stream::Stream;
 
 mod https;
 #[cfg(feature = "local")]
@@ -24,7 +27,9 @@ mod s3;
 // stabilized in Rust.
 
 pub type BinaryCacheFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, ()>> + Send + 'a>>;
+pub type OutputStream<'a> = Pin<Box<dyn Stream<Item = Result<Vec<u8>, ()>> + Send + 'a>>;
 
 pub trait BinaryCache: Debug {
-    fn query<'a>(&'a mut self, id: &'a OutputId) -> BinaryCacheFuture<'a, ()>;
+    fn query_outputs<'a>(&'a mut self, id: &'a OutputId) -> BinaryCacheFuture<'a, ()>;
+    fn fetch_output<'a>(&'a mut self, id: &'a OutputId) -> OutputStream<'a>;
 }
