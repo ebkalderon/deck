@@ -1,6 +1,6 @@
 use std::ffi::OsString;
 
-use deck_binary_cache::{BinaryCache, BinaryCacheFuture};
+use deck_binary_cache::{BinaryCache, BinaryCacheFuture, OutputStream};
 use deck_core::{Manifest, ManifestId, OutputId, Platform};
 use deck_repository::Repository;
 
@@ -34,7 +34,11 @@ impl LocalStore {
 }
 
 impl BinaryCache for LocalStore {
-    fn query<'a>(&'a mut self, _id: &'a OutputId) -> BinaryCacheFuture<'a, ()> {
+    fn query_outputs<'a>(&'a mut self, _id: &'a OutputId) -> BinaryCacheFuture<'a, ()> {
+        unimplemented!()
+    }
+
+    fn fetch_output<'a>(&'a mut self, _id: &'a OutputId) -> OutputStream<'a> {
         unimplemented!()
     }
 }
