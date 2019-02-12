@@ -2,7 +2,7 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "deck build")]
-pub struct Opt {
+struct Opt {
     // The number of occurences of the `v/verbose` flag
     /// Verbose mode (-v, -vv, -vvv, etc.)
     #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
