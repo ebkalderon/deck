@@ -19,10 +19,6 @@ path = "../deck-daemon"
 optional = true
 
 [[bin]]
-name = "deck"
-path = "src/main.rs"
-
-[[bin]]
 name = "deck-build"
 path = "src/bin/build.rs"
 
