@@ -8,5 +8,6 @@ fn main() {
         .build(
             &["proto/daemon/v1alpha1/daemon.proto"],
             &["proto/daemon/v1alpha1"],
-        ).unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
+        )
+        .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
 }

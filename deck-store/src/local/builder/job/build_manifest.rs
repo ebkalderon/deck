@@ -9,7 +9,7 @@ use futures_preview::future::{self, FutureExt};
 use futures_preview::stream::{self, Stream};
 
 use crate::local::context::Context;
-use crate::progress::{Building, BuildStatus, Finished, FinalStatus, Progress};
+use crate::progress::{BuildStatus, Building, FinalStatus, Finished, Progress};
 
 #[must_use = "streams do nothing unless polled"]
 pub struct BuildManifest(Pin<Box<dyn Stream<Item = Result<Progress, ()>> + Send>>);
