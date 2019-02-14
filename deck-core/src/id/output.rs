@@ -19,7 +19,7 @@ pub struct OutputId {
 
 impl OutputId {
     #[inline]
-    pub fn new(name: Name, version: String, output: Option<Name>, hash: Hash) -> Self {
+    pub const fn new(name: Name, version: String, output: Option<Name>, hash: Hash) -> Self {
         OutputId {
             name,
             version,
@@ -61,7 +61,7 @@ impl OutputId {
     }
 
     #[inline]
-    pub fn hash(&self) -> &Hash {
+    pub const fn hash(&self) -> &Hash {
         &self.hash
     }
 

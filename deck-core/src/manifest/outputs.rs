@@ -185,10 +185,10 @@ struct Entry {
 impl Entry {
     /// Creates a new `Entry` with the given name, precomputed hash, and references.
     #[inline]
-    pub fn new(output_name: Output, precomputed_hash: Hash, refs: BTreeSet<OutputId>) -> Self {
+    pub const fn new(output_name: Output, hash: Hash, refs: BTreeSet<OutputId>) -> Self {
         Entry {
             output_name,
-            precomputed_hash,
+            precomputed_hash: hash,
             references: refs,
         }
     }

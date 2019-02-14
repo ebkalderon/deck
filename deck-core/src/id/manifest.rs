@@ -17,7 +17,7 @@ pub struct ManifestId {
 }
 
 impl ManifestId {
-    pub fn new(name: Name, version: String, hash: Hash) -> Self {
+    pub const fn new(name: Name, version: String, hash: Hash) -> Self {
         ManifestId {
             name,
             version,
@@ -44,7 +44,7 @@ impl ManifestId {
     }
 
     #[inline]
-    pub fn hash(&self) -> &Hash {
+    pub const fn hash(&self) -> &Hash {
         &self.hash
     }
 
