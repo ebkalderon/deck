@@ -16,8 +16,8 @@ pub struct Hash([u8; HASH_LENGTH]);
 
 impl Hash {
     #[inline]
-    pub fn compute() -> Builder {
-        Builder::new()
+    pub fn compute() -> HashBuilder {
+        HashBuilder::new()
     }
 
     pub fn random() -> Self {
@@ -29,7 +29,7 @@ impl Hash {
     pub fn from_reader<R: BufRead>(reader: &mut R) -> Result<Hash, ()> {
         let mut buf = Vec::new();
         reader.read_to_end(&mut buf).map_err(|_| ())?;
-        let hash = Builder::new().input(buf).finish();
+        let hash = HashBuilder::new().input(buf).finish();
         Ok(hash)
     }
 }
@@ -104,13 +104,13 @@ impl Serialize for Hash {
 }
 
 #[derive(Debug)]
-pub struct Builder {
+pub struct HashBuilder {
     hasher: VarBlake2b,
 }
 
-impl Builder {
+impl HashBuilder {
     fn new() -> Self {
-        Builder {
+        HashBuilder {
             hasher: VarBlake2b::new(HASH_LENGTH).expect("HASH_LENGTH is an invalid value"),
         }
     }
