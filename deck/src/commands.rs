@@ -1,32 +1,49 @@
+use std::path::PathBuf;
+
 use structopt::StructOpt;
 
 use self::build::Build;
 
 mod build;
 
+/// Trait implemented by all subcommands.
 trait CliCommand: StructOpt {
-    fn run(self, flags: CommonFlags) -> Result<(), String>;
+    /// Execute the command with the given global flags.
+    fn run(self, flags: GlobalFlags) -> Result<(), String>;
 }
 
+/// Global command-line flags.
 #[derive(Debug, StructOpt)]
-pub struct CommonFlags {
+pub struct GlobalFlags {
     /// No output printed to stdout
     #[structopt(
+        global = true,
         short = "q",
         long = "quiet",
-        raw(global = "true", conflicts_with = "\"verbose\"")
+        conflicts_with = "\"verbose\""
     )]
     quiet: bool,
+    #[structopt(
+        global = true,
+        long = "store-dir",
+        env = "DECK_STORE_PATH",
+        default_value = "/deck/store",
+        parse(from_os_str)
+    )]
+    /// Path to the store directory
+    store_path: PathBuf,
     /// Increase verbosity level of output
     #[structopt(
+        global = true,
         short = "v",
         long = "verbose",
-        raw(global = "true"),
+        env = "DECK_VERBOSE",
         parse(from_occurrences)
     )]
     verbosity: u8,
 }
 
+/// Built-in Deck client subcommands.
 #[derive(Debug, StructOpt)]
 pub enum Subcommand {
     /// Compile a package from source
@@ -59,7 +76,8 @@ pub enum Subcommand {
 }
 
 impl Subcommand {
-    pub fn run(self, flags: CommonFlags) -> Result<(), String> {
+    /// Executes the active subcommand with the given arguments.
+    pub fn run(self, flags: GlobalFlags) -> Result<(), String> {
         println!("{:?}", flags);
         match self {
             Subcommand::Build(cmd) => cmd.run(flags),

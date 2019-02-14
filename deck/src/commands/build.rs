@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 
-use super::{CliCommand, CommonFlags};
+use super::{CliCommand, GlobalFlags};
 
 #[derive(Debug, StructOpt)]
 pub struct Build {
@@ -11,7 +11,7 @@ pub struct Build {
 }
 
 impl CliCommand for Build {
-    fn run(self, _flags: CommonFlags) -> Result<(), String> {
+    fn run(self, _flags: GlobalFlags) -> Result<(), String> {
         unimplemented!()
     }
 }

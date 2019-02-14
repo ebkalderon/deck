@@ -4,18 +4,16 @@ use std::process;
 
 use structopt::StructOpt;
 
-use commands::{CommonFlags, Subcommand};
+use commands::{GlobalFlags, Subcommand};
 
 mod commands;
 
 /// Declarative, reproducible, and functional package manager
-///
-/// Deck is an ongoing work in progress.
 #[derive(Debug, StructOpt)]
-#[structopt(name = "deck")]
+#[structopt(name = "deck", after_help = "Foo")]
 struct Opt {
     #[structopt(flatten)]
-    common_flags: CommonFlags,
+    flags: GlobalFlags,
     #[structopt(subcommand)]
     command: Subcommand,
 }
@@ -23,7 +21,7 @@ struct Opt {
 fn main() {
     let opt = Opt::from_args();
 
-    if let Err(e) = opt.command.run(opt.common_flags) {
+    if let Err(e) = opt.command.run(opt.flags) {
         eprintln!("{}", e);
         process::exit(1);
     }
