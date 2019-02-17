@@ -10,8 +10,8 @@ edition = "2018"
 default-run = "deck"
 
 [dependencies]
-clap = "2.32"
-structopt = "0.2"
+clap = "2.32.0"
+structopt = "0.2.14"
 
 [dependencies.deck-client]
 path = "../deck-client"
@@ -27,7 +27,7 @@ path = "src/bin/daemon.rs"
 required-features = ["multi-user-mode"]
 
 [dev-dependencies]
-serde_json = "1.0"
+serde_json = "1.0.38"
 
 [features]
 default = ["multi-user-mode"]

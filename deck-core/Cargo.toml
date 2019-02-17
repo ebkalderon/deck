@@ -14,5 +14,5 @@ toml = "0.4.10"
 url = "1.7.2"
 
 [dependencies.serde]
-version = "1.0.87"
+version = "1.0.88"
 features = ["derive"]
