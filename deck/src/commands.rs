@@ -7,6 +7,7 @@ use self::completion::{Completion, AFTER_HELP as COMPLETION_AFTER_HELP};
 use self::install::{Install, AFTER_HELP as INSTALL_AFTER_HELP};
 use self::list::{List, AFTER_HELP as LIST_AFTER_HELP};
 use self::log::{Log, AFTER_HELP as LOG_AFTER_HELP};
+use self::package::{Package, AFTER_HELP as PACKAGE_AFTER_HELP};
 use self::profile::{Profile, AFTER_HELP as PROFILE_AFTER_HELP};
 use self::remove::{Remove, AFTER_HELP as REMOVE_AFTER_HELP};
 use self::revert::{Revert, AFTER_HELP as REVERT_AFTER_HELP};
@@ -20,6 +21,7 @@ mod completion;
 mod install;
 mod list;
 mod log;
+mod package;
 mod profile;
 mod remove;
 mod revert;
@@ -84,6 +86,9 @@ pub enum Subcommand {
     /// Install new packages
     #[structopt(name = "install", raw(after_help = "INSTALL_AFTER_HELP"))]
     Install(Install),
+    /// Export packages in a portable format
+    #[structopt(name = "package", raw(after_help = "PACKAGE_AFTER_HELP"))]
+    Package(Package),
     /// Perform a package transaction on a profile
     #[structopt(name = "profile", raw(after_help = "PROFILE_AFTER_HELP"))]
     Profile(Profile),
@@ -118,6 +123,7 @@ impl Subcommand {
             Subcommand::List(cmd) => cmd.run(flags),
             Subcommand::Log(cmd) => cmd.run(flags),
             Subcommand::Install(cmd) => cmd.run(flags),
+            Subcommand::Package(cmd) => cmd.run(flags),
             Subcommand::Profile(cmd) => cmd.run(flags),
             Subcommand::Remove(cmd) => cmd.run(flags),
             Subcommand::Revert(cmd) => cmd.run(flags),
