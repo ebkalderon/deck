@@ -31,7 +31,7 @@ pub struct Upgrade {
     )]
     profile: Option<String>,
     /// Package manifest specifiers
-    #[structopt(empty_values = false, value_name = "PACKAGE", required = true)]
+    #[structopt(empty_values = false, value_name = "PACKAGE")]
     packages: Vec<String>,
 }
 
