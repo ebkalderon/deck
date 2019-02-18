@@ -12,13 +12,21 @@ pub const AFTER_HELP: &str = r#"EXAMPLES:
     To install multiple packages:
     $ deck install firefox emacs:25.1.0 ffmpeg
 
-This command is a convenient shorthand for `deck package -i <PACKAGE>`.
+This command is a convenient shorthand for `deck profile -i <PACKAGE>`.
 Any package transaction can be atomically rolled back `deck revert`. See
 `deck revert --help` for more details.
 "#;
 
 #[derive(Debug, StructOpt)]
 pub struct Install {
+    /// Profile to apply the transaction
+    #[structopt(
+        short = "p",
+        long = "profile",
+        empty_values = false,
+        value_name = "PROFILE_NAME"
+    )]
+    profile: Option<String>,
     /// Package manifest specifiers
     #[structopt(empty_values = false, value_name = "PACKAGE", required = true)]
     packages: Vec<String>,

@@ -22,6 +22,14 @@ Any package transaction can be atomically rolled back `deck revert`. See
 
 #[derive(Debug, StructOpt)]
 pub struct Upgrade {
+    /// Profile to apply the transaction
+    #[structopt(
+        short = "p",
+        long = "profile",
+        empty_values = false,
+        value_name = "PROFILE_NAME"
+    )]
+    profile: Option<String>,
     /// Package manifest specifiers
     #[structopt(empty_values = false, value_name = "PACKAGE", required = true)]
     packages: Vec<String>,

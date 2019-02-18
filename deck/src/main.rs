@@ -41,7 +41,6 @@ EXAMPLES:
 
     To roll back the most recent transaction:
     $ deck revert
-
 "#;
 
 /// Declarative package manager

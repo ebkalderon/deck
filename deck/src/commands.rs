@@ -3,18 +3,28 @@ use std::path::PathBuf;
 use structopt::StructOpt;
 
 use self::build::Build;
+use self::completion::{Completion, AFTER_HELP as COMPLETION_AFTER_HELP};
 use self::install::{Install, AFTER_HELP as INSTALL_AFTER_HELP};
-use self::package::{Package, AFTER_HELP as PACKAGE_AFTER_HELP};
+use self::list::{List, AFTER_HELP as LIST_AFTER_HELP};
+use self::log::{Log, AFTER_HELP as LOG_AFTER_HELP};
+use self::profile::{Profile, AFTER_HELP as PROFILE_AFTER_HELP};
 use self::remove::{Remove, AFTER_HELP as REMOVE_AFTER_HELP};
+use self::revert::{Revert, AFTER_HELP as REVERT_AFTER_HELP};
 use self::search::{Search, AFTER_HELP as SEARCH_AFTER_HELP};
+use self::update::{Update, AFTER_HELP as UPDATE_AFTER_HELP};
 use self::upgrade::{Upgrade, AFTER_HELP as UPGRADE_AFTER_HELP};
 use self::verify::{Verify, AFTER_HELP as VERIFY_AFTER_HELP};
 
 mod build;
+mod completion;
 mod install;
-mod package;
+mod list;
+mod log;
+mod profile;
 mod remove;
+mod revert;
 mod search;
+mod update;
 mod upgrade;
 mod verify;
 
@@ -62,21 +72,33 @@ pub enum Subcommand {
     /// Compile a package from source
     #[structopt(name = "build")]
     Build(Build),
+    /// Print shell completions to stdout
+    #[structopt(name = "completion", raw(after_help = "COMPLETION_AFTER_HELP"))]
+    Completion(Completion),
+    /// Display build logs for packages
+    #[structopt(name = "log", raw(after_help = "LOG_AFTER_HELP"))]
+    Log(Log),
+    /// List installed packages
+    #[structopt(name = "list", raw(after_help = "LIST_AFTER_HELP"))]
+    List(List),
     /// Install new packages
     #[structopt(name = "install", raw(after_help = "INSTALL_AFTER_HELP"))]
     Install(Install),
-    /// Perform a package transaction
-    #[structopt(name = "package", raw(after_help = "PACKAGE_AFTER_HELP"))]
-    Package(Package),
+    /// Perform a package transaction on a profile
+    #[structopt(name = "profile", raw(after_help = "PROFILE_AFTER_HELP"))]
+    Profile(Profile),
     /// Uninstall existing packages
     #[structopt(name = "remove", raw(after_help = "REMOVE_AFTER_HELP"))]
     Remove(Remove),
+    /// Roll back one or more package transactions
+    #[structopt(name = "revert", raw(after_help = "REVERT_AFTER_HELP"))]
+    Revert(Revert),
     /// Search repositories for packages
-    #[structopt(name = "search", raw(after_help = "SEARCH_AFTER_HELP")]
+    #[structopt(name = "search", raw(after_help = "SEARCH_AFTER_HELP"))]
     Search(Search),
     /// Synchronize updates from upstream repositories
-    #[structopt(name = "update")]
-    Update,
+    #[structopt(name = "update", raw(after_help = "UPDATE_AFTER_HELP"))]
+    Update(Update),
     /// Upgrade existing packages in your environment
     #[structopt(name = "upgrade", raw(after_help = "UPGRADE_AFTER_HELP"))]
     Upgrade(Upgrade),
@@ -92,7 +114,17 @@ impl Subcommand {
         println!("{:?}", self);
         match self {
             Subcommand::Build(cmd) => cmd.run(flags),
-            _ => Ok(()),
+            Subcommand::Completion(cmd) => cmd.run(flags),
+            Subcommand::List(cmd) => cmd.run(flags),
+            Subcommand::Log(cmd) => cmd.run(flags),
+            Subcommand::Install(cmd) => cmd.run(flags),
+            Subcommand::Profile(cmd) => cmd.run(flags),
+            Subcommand::Remove(cmd) => cmd.run(flags),
+            Subcommand::Revert(cmd) => cmd.run(flags),
+            Subcommand::Search(cmd) => cmd.run(flags),
+            Subcommand::Update(cmd) => cmd.run(flags),
+            Subcommand::Upgrade(cmd) => cmd.run(flags),
+            Subcommand::Verify(cmd) => cmd.run(flags),
         }
     }
 }

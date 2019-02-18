@@ -26,8 +26,8 @@ pub struct Search {
     #[structopt(long = "recutils")]
     recutils: bool,
     /// Limit search results to a specific set of repositories
-    #[structopt(empty_values = false, long = "only-in", value_name = "REPO")]
-    only_in: Vec<String>,
+    #[structopt(empty_values = false, long = "repo", value_name = "REPO")]
+    repo: Option<String>,
     /// Regular expression(s)
     #[structopt(value_name = "REGEX", required = true)]
     keywords: Vec<String>,
