@@ -28,9 +28,9 @@ pub struct Search {
     /// Limit search results to a specific set of repositories
     #[structopt(empty_values = false, long = "repo", value_name = "REPO")]
     repo: Option<String>,
-    /// Regular expression(s)
-    #[structopt(value_name = "REGEX", required = true)]
-    keywords: Vec<String>,
+    /// Regular expression(s) for filtering package names
+    #[structopt(value_name = "PATTERN", required = true)]
+    patterns: Vec<String>,
 }
 
 impl CliCommand for Search {
