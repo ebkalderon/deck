@@ -55,6 +55,7 @@ pub struct Profile {
         short = "R",
         long = "revert",
         value_name = "PATTERN",
+        allow_hyphen_values = true,
         display_order = 1,
         conflicts_with = "switch",
         raw(required_unless_one = "&[\"remove\", \"switch\", \"install\", \"upgrade\"]")
@@ -115,6 +116,8 @@ impl FromStr for Revert {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.is_empty() {
             Ok(Revert::Previous)
+        } else if s.starts_with("+") {
+            Err("invalid number of generations".to_string())
         } else {
             s.parse()
                 .map(Revert::Several)
