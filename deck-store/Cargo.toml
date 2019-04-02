@@ -48,7 +48,7 @@ optional = true
 [dependencies.futures-preview]
 package = "futures-preview"
 features = ["compat", "io-compat"]
-version = "0.3.0-alpha.12"
+version = "0.3.0-alpha.13"
 
 [features]
 default = ["ssh"]

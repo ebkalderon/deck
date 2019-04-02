@@ -12,7 +12,7 @@ use std::ffi::OsString;
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::future::Future;
 use std::pin::Pin;
-use std::task::{LocalWaker, Poll};
+use std::task::{Poll, Waker};
 
 use deck_binary_cache::BinaryCache;
 use deck_core::{Manifest, ManifestId, Platform};
@@ -87,7 +87,7 @@ impl Debug for BuildStream {
 impl Stream for BuildStream {
     type Item = Result<Progress, ()>;
 
-    fn poll_next(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Option<Self::Item>> {
-        self.0.as_mut().poll_next(lw)
+    fn poll_next(mut self: Pin<&mut Self>, waker: &Waker) -> Poll<Option<Self::Item>> {
+        self.0.as_mut().poll_next(waker)
     }
 }

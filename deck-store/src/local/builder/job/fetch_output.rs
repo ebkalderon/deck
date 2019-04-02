@@ -1,5 +1,5 @@
 use std::pin::Pin;
-use std::task::{LocalWaker, Poll};
+use std::task::{Poll, Waker};
 
 use deck_core::ManifestId;
 use futures_preview::stream::Stream;
@@ -19,7 +19,7 @@ impl FetchOutput {
 impl Stream for FetchOutput {
     type Item = Result<Progress, ()>;
 
-    fn poll_next(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Option<Self::Item>> {
-        self.0.as_mut().poll_next(lw)
+    fn poll_next(mut self: Pin<&mut Self>, waker: &Waker) -> Poll<Option<Self::Item>> {
+        self.0.as_mut().poll_next(waker)
     }
 }

@@ -1,6 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
-use std::task::{LocalWaker, Poll};
+use std::task::{Poll, Waker};
 use std::time::{Duration, Instant};
 
 use deck_core::Manifest;
@@ -49,7 +49,7 @@ impl BuildManifest {
 impl Stream for BuildManifest {
     type Item = Result<Progress, ()>;
 
-    fn poll_next(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Option<Self::Item>> {
-        self.0.as_mut().poll_next(lw)
+    fn poll_next(mut self: Pin<&mut Self>, waker: &Waker) -> Poll<Option<Self::Item>> {
+        self.0.as_mut().poll_next(waker)
     }
 }

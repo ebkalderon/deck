@@ -1,5 +1,5 @@
 use std::pin::Pin;
-use std::task::{LocalWaker, Poll};
+use std::task::{Poll, Waker};
 
 use deck_core::{ManifestId, Source};
 use futures_preview::compat::{Future01CompatExt, Stream01CompatExt};
@@ -30,8 +30,8 @@ impl FetchSource {
 impl Stream for FetchSource {
     type Item = Result<Progress, ()>;
 
-    fn poll_next(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Option<Self::Item>> {
-        self.0.as_mut().poll_next(lw)
+    fn poll_next(mut self: Pin<&mut Self>, waker: &Waker) -> Poll<Option<Self::Item>> {
+        self.0.as_mut().poll_next(waker)
     }
 }
 

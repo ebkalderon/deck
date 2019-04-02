@@ -118,7 +118,7 @@ impl FromStr for Revert {
         } else {
             s.parse()
                 .map(Revert::Several)
-                .map_err(|_| "invalid generation".to_string())
+                .map_err(|_| "invalid number of generations".to_string())
         }
     }
 }

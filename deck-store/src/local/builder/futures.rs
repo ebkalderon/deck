@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter, Result as FmtResult};
 use std::future::Future;
 use std::pin::Pin;
-use std::task::{LocalWaker, Poll};
+use std::task::{Poll, Waker};
 
 use deck_core::{Manifest, ManifestId};
 use futures_preview::future::{self, FutureExt, TryFutureExt};
@@ -22,25 +22,25 @@ pub struct JobFuture(Pin<Box<dyn Future<Output = ()> + Send>>);
 
 impl JobFuture {
     /// Creates a new `JobFuture` that forwards the `progress` stream to the given `ProgressSender`.
-    pub fn new<S>(mut progress: S, mut tx: ProgressSender) -> Self
+    pub fn new<S>(progress: S, tx: ProgressSender) -> Self
     where
         S: Stream<Item = Result<Progress, ()>> + Send + Unpin + 'static,
     {
-        let future = async move {
-            await!(tx
-                .send_all(&mut progress)
-                .unwrap_or_else(|_| eprintln!("send error")));
-        };
+        let future = progress
+            .map(Ok)
+            .forward(tx.sink_map_err(|_| ()))
+            .map(|_| ())
+            .boxed();
 
-        JobFuture(future.boxed())
+        JobFuture(future)
     }
 }
 
 impl Future for JobFuture {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Self::Output> {
-        self.0.as_mut().poll(lw)
+    fn poll(mut self: Pin<&mut Self>, waker: &Waker) -> Poll<Self::Output> {
+        self.0.as_mut().poll(waker)
     }
 }
 
@@ -95,8 +95,8 @@ impl Debug for BuildFuture {
 impl Future for BuildFuture {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Self::Output> {
-        Future::poll(Pin::new(&mut self.0), lw)
+    fn poll(mut self: Pin<&mut Self>, waker: &Waker) -> Poll<Self::Output> {
+        Future::poll(Pin::new(&mut self.0), waker)
     }
 }
 
@@ -138,8 +138,8 @@ impl Debug for InnerFuture {
 impl Future for InnerFuture {
     type Output = Result<BuilderState, ()>;
 
-    fn poll(mut self: Pin<&mut Self>, lw: &LocalWaker) -> Poll<Self::Output> {
-        self.0.as_mut().poll(lw)
+    fn poll(mut self: Pin<&mut Self>, waker: &Waker) -> Poll<Self::Output> {
+        self.0.as_mut().poll(waker)
     }
 }
 
