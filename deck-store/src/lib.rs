@@ -1,3 +1,4 @@
+#![deny(clippy::all)]
 #![deny(missing_debug_implementations)]
 #![feature(async_await, await_macro, futures_api)]
 #![feature(const_str_as_bytes)]
